@@ -1,6 +1,10 @@
 {
   "sourceMap": true,
-  "files": ["scripts/main.ts", "scripts/renderer.ts"],
+  "files": [
+    "scripts/wad.ts",
+    "scripts/renderer.ts",
+    "scripts/main.ts"
+  ],
   "compilerOptions": {
     "target": "ES5",
     "lib": ["es6", "dom"]

@@ -29,8 +29,9 @@ document.querySelectorAll('.drop-target').forEach(elem => {
             let possibleWad = e.dataTransfer.files.item(0)
             if (possibleWad.type == "application/x-doom-wad") {
                 possibleWad.arrayBuffer().then(buf => {
+                    let reader = readString("ASCII")
                     let memory = new Uint8Array(buf)
-                    console.log(memory[0], buf.byteLength)
+                    console.log(reader(memory, 0, 4), readU32LE(memory, 4), buf.byteLength)
                 })
             }
         }
