@@ -70,15 +70,19 @@ function loadTexture(gl) {
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
 
+    const width = 4
+    const height = 4
+    const count = 4
+
     let raw = []
     let black = [0, 0, 0, 255]
-    let colors = [[255, 0, 0, 255], [0, 0, 255, 255]]
-    for (let y = 0; y < 4; y++) {
-        for (let i = 0; i < 2; i++) {
-            for (let x = 0; x < 4; x++) {
+    let colors = [[255, 0, 0, 255], [0, 0, 255, 255], [0, 255, 0, 255], [0, 255, 0, 255]]
+    for (let y = 0; y < height; y++) {
+        for (let i = 0; i < count; i++) {
+            for (let x = 0; x < width; x++) {
                 let color = black
-                let j = 8 * y + x + 4 * i
-                if ((j + Math.floor(j / 8)) % 2 == 0) {
+                let j = width * count * y + width * i + x
+                if ((j + Math.floor(j / (width * count))) % 2 == 0) {
                     color = colors[i]
                 }
                 for (let c = 0; c < 4; c++) {
@@ -87,10 +91,9 @@ function loadTexture(gl) {
             }
         }
     }
-    console.log(raw)
     const pixels = new Uint8Array(raw)
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width * count, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 
@@ -129,26 +132,51 @@ class Renderer {
         ]
 
         const vertices = [
-            -1, 1,
-            1, 1,
-            -1, -1,
-            1, -1
+            -1,  1, 2,
+            -1, -1, 2,
+             1,  1, 0,
+             1, -1, 0,
+
+             1,  1, 0,
+             1, -1, 0,
+             3,  1, 1,
+             3, -1, 1,
+
+            -1, -1, 2,
+             1, -1, 0,
+             1, -1, 3,
+             3, -1, 1
         ]
 
         const vertexBuffer = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 
-        const textureCoords = [
-            0, 0,
-            .5, 0,
-            0, 1,
-            .5, 1,
+        const triangles = [
+            0, 1, 2,    1, 2, 3,
+            4, 5, 6,    5, 6, 7,
+            8, 9,10,    9,10,11
+        ]
 
-            .5, 0,
-            1, 0,
-            .5, 1,
-            1, 1
+        const triangleBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffer)
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangles), gl.STATIC_DRAW)
+
+        const textureCoords = [
+            0  , 0,
+            0  , 1,
+            .25, 0,
+            .25, 1,
+
+            .25, 0,
+            .25, 1,
+            .5 , 0,
+            .5 , 1,
+
+            .5 , 0,
+            .5 , 1,
+            .75, 0,
+            .75, 1
         ]
 
         const textureCoordBuffer = gl.createBuffer()
@@ -156,19 +184,15 @@ class Renderer {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW)
 
         this.world = {
-            vertices: vertices,
             buffers: {
                 vertices: vertexBuffer,
+                triangles: triangleBuffer,
                 textureCoords: textureCoordBuffer
             },
-            rectangle0: new Transform(),
-            rectangle1: new Transform(),
             player: new Transform(),
             texture: loadTexture(gl)
         }
 
-        this.world.rectangle0.rotate(0, deg2rad(45), 0)
-        this.world.rectangle1.translate(-1, 1, -2)
         this.world.player.translate(0, 0, -6)
 
         return Promise.all(shaders).then(shaders => {
@@ -183,15 +207,15 @@ class Renderer {
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.world.rectangle0.rotate(0, deg2rad(120 * dt), 0)
-
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.vertices)
-        gl.vertexAttribPointer(this.shaders[0].attribute["vertexPosition"], 2, gl.FLOAT, false, 0, 0)
+        gl.vertexAttribPointer(this.shaders[0].attribute["vertexPosition"], 3, gl.FLOAT, false, 0, 0)
         gl.enableVertexAttribArray(this.shaders[0].attribute["vertexPosition"])
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.world.buffers.triangles)
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords)
         gl.vertexAttribPointer(this.shaders[0].attribute["textureCoord"], 2, gl.FLOAT, false, 0, 0)
@@ -199,7 +223,7 @@ class Renderer {
 
         gl.useProgram(this.shaders[0].program)
 
-        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.world.rectangle0.getMatrix())
+        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, mat4.identity)
         gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.world.player.getMatrix())
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
 
@@ -207,15 +231,7 @@ class Renderer {
         gl.bindTexture(gl.TEXTURE_2D, this.world.texture)
         gl.uniform1i(this.shaders[0].uniform["sampler"], 0)
 
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords)
-        gl.vertexAttribPointer(this.shaders[0].attribute["textureCoord"], 2, gl.FLOAT, false, 0, 8 * 4)
-        gl.enableVertexAttribArray(this.shaders[0].attribute["textureCoord"])
-
-        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.world.rectangle1.getMatrix())
-
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        gl.drawElements(gl.TRIANGLES, 18, gl.UNSIGNED_SHORT, 0)
     }
 }
 
