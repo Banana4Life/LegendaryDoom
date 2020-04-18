@@ -1,12 +1,14 @@
 {
   "files": [
     "scripts/wad.ts",
+    "scripts/game-data.ts",
     "scripts/controls.ts",
     "scripts/math.ts",
     "scripts/renderer.ts",
     "scripts/main.ts"
   ],
   "compilerOptions": {
+    "inlineSourceMap": true,
     "target": "ES5",
     "lib": ["es6", "dom"]
   }
