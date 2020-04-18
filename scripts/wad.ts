@@ -1,16 +1,17 @@
-
 type StringReader = (buf: Uint8Array, offset: number, length: number) => string
+
 function readString(encoding: string): StringReader {
     let encoder = new TextDecoder(encoding)
     return (buf, offset, length) => {
         let end = offset + length
         while (buf[end - 1] === 0) {
-            end--;
+            end--
         }
         let slice = buf.slice(offset, end)
-        return encoder.decode(slice);
-    };
+        return encoder.decode(slice)
+    }
 }
+
 const readASCIIString = readString("ASCII")
 
 function unsignedToSigned(bits: number): (n: number) => number {
@@ -20,7 +21,7 @@ function unsignedToSigned(bits: number): (n: number) => number {
         if (sign == 0) {
             return n
         } else {
-            return -1 * (n & ~(1 << shift));
+            return -1 * (n & ~(1 << shift))
         }
     }
 }
@@ -48,9 +49,9 @@ class WADHeader {
     readonly dictionaryPointer: number
 
     constructor(type: WADType, lumpCount: number, dictionaryPointer: number) {
-        this.type = type;
-        this.lumpCount = lumpCount;
-        this.dictionaryPointer = dictionaryPointer;
+        this.type = type
+        this.lumpCount = lumpCount
+        this.dictionaryPointer = dictionaryPointer
     }
 }
 
@@ -73,8 +74,8 @@ class WADLump {
     readonly data: Uint8Array
 
     constructor(name: string, data: Uint8Array) {
-        this.name = name;
-        this.data = data;
+        this.name = name
+        this.data = data
     }
 }
 
@@ -105,7 +106,7 @@ function parseHeader(buf: Uint8Array, offset: number): Promise<WADHeader> {
 }
 
 function parseDictionary(buf: Uint8Array, offset: number, lumpCount: number): WADDictionary {
-    let dict: WADDictionary = [];
+    let dict: WADDictionary = []
 
     for (let i = 0; i < lumpCount; ++i) {
         let lumpOffset = offset + (i * WADLump.StructSize)

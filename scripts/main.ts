@@ -3,6 +3,7 @@ function dragStart(e: DragEvent): void {
         e.target.classList.add('drag-hover')
     }
 }
+
 function dragEnd(e: DragEvent): void {
     if (e.target instanceof Element) {
         e.target.classList.remove('drag-hover')
@@ -36,7 +37,7 @@ document.querySelectorAll('.drop-target').forEach(elem => {
 })
 
 function main() {
-    game.init();
+    game.init()
 }
 
-window.onload = main;
+window.onload = main

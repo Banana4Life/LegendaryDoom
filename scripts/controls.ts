@@ -22,13 +22,13 @@ class Controls {
         x: 0,
         y: 0
     }
+    private magicWords = ""
 
     init(mouseX: number, mouseY: number) {
-        this.initListeners();
+        this.initListeners()
         this.mousePos.x = mouseX
         this.mousePos.y = mouseY
     }
-
 
     buttonPressed(...buttons: number[]) {
         for (const button of buttons) {
@@ -48,7 +48,10 @@ class Controls {
         return false
     }
 
-    private magicWords = "";
+    lockPointer(elem: Element) {
+        console.log("Pointer Locked onto " + elem)
+        elem.requestPointerLock()
+    }
 
     private initListeners() {
 
@@ -75,15 +78,15 @@ class Controls {
             }
 
             if (e.code === "Enter") {
-                this.doMagic();
+                this.doMagic()
             }
-            this.magicWords += e.key;
+            this.magicWords += e.key
 
             for (let keysKey in this.keys) {
                 let key: ConfigurableKey = this.keys[keysKey]
                 if (key.callbacks.length > 0) {
                     if (key.hasCode(e.code)) {
-                        key.makeCallbacks(e);
+                        key.makeCallbacks(e)
                     }
                 }
             }
@@ -125,15 +128,11 @@ class Controls {
         this.magicWords = ""
     }
 
-    lockPointer(elem: Element) {
-        console.log("Pointer Locked onto " + elem)
-        elem.requestPointerLock()
-    }
-
 }
 
 class ConfigurableKey {
     codes
+    callbacks = []
 
     constructor(...codes: String[]) {
         this.codes = codes
@@ -146,27 +145,25 @@ class ConfigurableKey {
     hasCodeIn(pressedKeys: String[]): boolean {
         for (const pressedKey of pressedKeys) {
             if (this.codes.indexOf(pressedKey) >= 0) {
-                return true;
+                return true
             }
         }
-        return false;
+        return false
     }
 
     hasCode(pressedKey: String): boolean {
         if (this.codes.indexOf(pressedKey) >= 0) {
-            return true;
+            return true
         }
     }
 
-    callbacks = []
-
     addCallback(callback) {
-        this.callbacks.push(callback);
+        this.callbacks.push(callback)
     }
 
     makeCallbacks(event: KeyboardEvent) {
         for (const callback of this.callbacks) {
-            callback(event);
+            callback(event)
         }
     }
 }

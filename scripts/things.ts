@@ -1,4 +1,13 @@
 class Transform {
+    dirty
+    matrix
+    transX
+    transY
+    transZ
+    roll
+    pitch
+    yaw
+
     constructor() {
         this.setTranslation(0, 0, 0)
         this.setRotation(0, 0, 0)
@@ -6,17 +15,6 @@ class Transform {
         this.dirty = true
         this.matrix = mat4.identity
     }
-
-    dirty
-    matrix
-
-    transX
-    transY
-    transZ
-
-    roll
-    pitch
-    yaw
 
     set(otherTransform) {
         this.setTranslation(otherTransform.getTranslation())
@@ -59,28 +57,12 @@ class Transform {
     getRotation() {
         return [this.roll, this.pitch, this.yaw]
     }
-    
+
     rotate(roll, pitch = 0, yaw = 0) {
         if (Array.isArray(roll)) {
             [roll, pitch, yaw] = roll
         }
         this.setRotation(this.roll + roll, this.pitch + pitch, this.yaw + yaw)
-    }
-
-    private quaternion() {
-        const cr = Math.cos(this.roll / 2);
-        const sr = Math.sin(this.roll / 2);
-        const cp = Math.cos(this.pitch / 2);
-        const sp = Math.sin(this.pitch / 2);
-        const cy = Math.cos(this.yaw / 2);
-        const sy = Math.sin(this.yaw / 2);
-
-        return [
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            sr * cp * sy + cr * sp * cy,
-            cr * cp * sy - sr * sp * cy
-        ]
     }
 
     getMatrix() {
@@ -91,5 +73,21 @@ class Transform {
             this.dirty = false
         }
         return this.matrix
+    }
+
+    private quaternion() {
+        const cr = Math.cos(this.roll / 2)
+        const sr = Math.sin(this.roll / 2)
+        const cp = Math.cos(this.pitch / 2)
+        const sp = Math.sin(this.pitch / 2)
+        const cy = Math.cos(this.yaw / 2)
+        const sy = Math.sin(this.yaw / 2)
+
+        return [
+            cr * cp * cy + sr * sp * sy,
+            sr * cp * cy - cr * sp * sy,
+            sr * cp * sy + cr * sp * cy,
+            cr * cp * sy - sr * sp * cy
+        ]
     }
 }

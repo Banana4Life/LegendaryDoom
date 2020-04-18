@@ -12,10 +12,10 @@ class AudioManager {
 
     audioCache = {}
 
-    t = 0;
+    t = 0
 
     update(dt) {
-        this.t += dt;
+        this.t += dt
     }
 
     playWadSound(sound: string, volume: number = 1) {
@@ -24,7 +24,7 @@ class AudioManager {
 
     play(sound: Sound | string, volume: number = 1, now: boolean = false) {
         if (!this.audioContext) {
-            this.audioContext = new AudioContext();
+            this.audioContext = new AudioContext()
         }
         if (!this.audioCache[sound]) {
             this.audioCache[sound] = this.newAudio(sound)
@@ -50,18 +50,18 @@ class AudioManager {
                 return this.getWadSound(sound.substr(4))
             }
         } else {
-            return new Audio(sound);
+            return new Audio(sound)
         }
     }
 
     private getWadSound(name: string) {
         let ds = game.doomGame.getSound(name)
-        let samples: Float32Array = new Float32Array(ds.samples.length);
+        let samples: Float32Array = new Float32Array(ds.samples.length)
         ds.samples.forEach((value, idx, arr) => samples[idx] = ((value / 256) - 0.5) * 2)
-        let audioBuffer = this.audioContext.createBuffer(1, samples.length, ds.sampleRate);
+        let audioBuffer = this.audioContext.createBuffer(1, samples.length, ds.sampleRate)
         audioBuffer.getChannelData(0).set(samples)
         // TODO cooldown values?
-        return new WadAudio(audioBuffer, 0.15);
+        return new WadAudio(audioBuffer, 0.15)
     }
 }
 
@@ -74,7 +74,7 @@ class WadAudio {
 
     constructor(buffer: AudioBuffer, cooldown) {
         this.buffer = buffer
-        this.cooldown = cooldown;
+        this.cooldown = cooldown
     }
 
     play(startTime: number, audioContext: AudioContext, volume: number = 1) {
@@ -99,7 +99,7 @@ class WadAudio {
     }
 
     setEnded() {
-        this.ended = true;
+        this.ended = true
     }
 
 

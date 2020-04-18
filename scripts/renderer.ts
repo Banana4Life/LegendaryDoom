@@ -1,74 +1,74 @@
 function compileShader(gl, type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
+    const shader = gl.createShader(type)
+    gl.shaderSource(shader, source)
+    gl.compileShader(shader)
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        let infoLog = gl.getShaderInfoLog(shader);
-        gl.deleteShader(shader);
-        throw new Error('An error occurred compiling the shaders: ' + infoLog);
+        let infoLog = gl.getShaderInfoLog(shader)
+        gl.deleteShader(shader)
+        throw new Error('An error occurred compiling the shaders: ' + infoLog)
     }
 
-    return shader;
+    return shader
 }
 
 function loadShader(gl, baseName, attributes, uniforms) {
     function location(name, type) {
         switch (type) {
             case gl.VERTEX_SHADER:
-                return `${name}.vert`;
+                return `${name}.vert`
             case gl.FRAGMENT_SHADER:
-                return `${name}.frag`;
+                return `${name}.frag`
             default:
-                throw "unknown type";
+                throw "unknown type"
         }
     }
 
     function compile(as) {
-        return source => compileShader(gl, as, source);
+        return source => compileShader(gl, as, source)
     }
 
     let vertex = fetch(location(baseName, gl.VERTEX_SHADER))
         .then(response => response.text())
-        .then(compile(gl.VERTEX_SHADER));
+        .then(compile(gl.VERTEX_SHADER))
 
     let fragment = fetch(location(baseName, gl.FRAGMENT_SHADER))
         .then(response => response.text())
-        .then(compile(gl.FRAGMENT_SHADER));
+        .then(compile(gl.FRAGMENT_SHADER))
 
     return Promise.all([vertex, fragment]).then(([vertexShader, fragmentShader]) => {
-        const shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+        const shaderProgram = gl.createProgram()
+        gl.attachShader(shaderProgram, vertexShader)
+        gl.attachShader(shaderProgram, fragmentShader)
+        gl.linkProgram(shaderProgram)
 
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            let infoLog = gl.getProgramInfoLog(shaderProgram);
-            gl.deleteProgram(shaderProgram);
-            throw new Error('Unable to initialize the shader program: ' + infoLog);
+            let infoLog = gl.getProgramInfoLog(shaderProgram)
+            gl.deleteProgram(shaderProgram)
+            throw new Error('Unable to initialize the shader program: ' + infoLog)
         }
 
         let shader = {
             program: shaderProgram,
             attribute: {},
             uniform: {},
-        };
+        }
 
         for (let attribute of attributes) {
-            shader.attribute[attribute] = gl.getAttribLocation(shaderProgram, attribute);
+            shader.attribute[attribute] = gl.getAttribLocation(shaderProgram, attribute)
         }
 
         for (let uniform of uniforms) {
-            shader.uniform[uniform] = gl.getUniformLocation(shaderProgram, uniform);
+            shader.uniform[uniform] = gl.getUniformLocation(shaderProgram, uniform)
         }
 
-        return shader;
-    });
+        return shader
+    })
 }
 
 function loadTexture(gl) {
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
 
     let raw = []
     let black = [0, 0, 0, 255]
@@ -82,7 +82,7 @@ function loadTexture(gl) {
                     color = colors[i]
                 }
                 for (let c = 0; c < 4; c++) {
-                    raw.push(color[c]);
+                    raw.push(color[c])
                 }
             }
         }
@@ -90,25 +90,34 @@ function loadTexture(gl) {
     console.log(raw)
     const pixels = new Uint8Array(raw)
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 
     return texture
 }
 
 class Renderer {
-    initRenderer() {
-        this.canvas = document.querySelector("canvas");
-        this.canvas.width = this.canvas.clientWidth;
-        this.canvas.height = this.canvas.clientHeight;
+    shaders
+    canvas
+    webgl
+    world
+    readonly fov = 90 * Math.PI / 180
+    readonly near = 0.1
+    readonly far = 100
+    t = 0
 
-        this.webgl = this.canvas.getContext("webgl");
-        let gl = this.webgl;
+    initRenderer() {
+        this.canvas = document.querySelector("canvas")
+        this.canvas.width = this.canvas.clientWidth
+        this.canvas.height = this.canvas.clientHeight
+
+        this.webgl = this.canvas.getContext("webgl")
+        let gl = this.webgl
 
         if (gl == null) {
-            alert("Unable to initialize WebGL!");
-            return;
+            alert("Unable to initialize WebGL!")
+            return
         }
 
         gl.enable(gl.DEPTH_TEST)
@@ -117,13 +126,13 @@ class Renderer {
         let shaders = [
             loadShader(gl, "shaders/simple", ["vertexPosition", "textureCoord"],
                 ["modelMatrix", "viewMatrix", "projectionMatrix", "sampler"])
-        ];
+        ]
 
         const vertices = [
-            -1,  1,
-             1,  1,
+            -1, 1,
+            1, 1,
             -1, -1,
-             1, -1
+            1, -1
         ]
 
         const vertexBuffer = gl.createBuffer()
@@ -131,16 +140,16 @@ class Renderer {
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 
         const textureCoords = [
-             0, 0,
+            0, 0,
             .5, 0,
-             0, 1,
+            0, 1,
             .5, 1,
 
             .5, 0,
-             1, 0,
+            1, 0,
             .5, 1,
-             1, 1
-        ];
+            1, 1
+        ]
 
         const textureCoordBuffer = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer)
@@ -163,23 +172,12 @@ class Renderer {
         this.world.player.translate(0, 0, -6)
 
         return Promise.all(shaders).then(shaders => {
-            this.shaders = shaders;
+            this.shaders = shaders
         })
     }
 
-    shaders
-    canvas
-    webgl
-    world
-
-    readonly fov = 90 * Math.PI / 180
-    readonly near = 0.1;
-    readonly far = 100;
-
-    t = 0;
-
     render(dt) {
-        this.t += dt;
+        this.t += dt
         let gl = this.webgl
 
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
@@ -191,11 +189,11 @@ class Renderer {
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.vertices);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.vertices)
         gl.vertexAttribPointer(this.shaders[0].attribute["vertexPosition"], 2, gl.FLOAT, false, 0, 0)
         gl.enableVertexAttribArray(this.shaders[0].attribute["vertexPosition"])
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords)
         gl.vertexAttribPointer(this.shaders[0].attribute["textureCoord"], 2, gl.FLOAT, false, 0, 0)
         gl.enableVertexAttribArray(this.shaders[0].attribute["textureCoord"])
 
@@ -211,7 +209,7 @@ class Renderer {
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords)
         gl.vertexAttribPointer(this.shaders[0].attribute["textureCoord"], 2, gl.FLOAT, false, 0, 8 * 4)
         gl.enableVertexAttribArray(this.shaders[0].attribute["textureCoord"])
 
