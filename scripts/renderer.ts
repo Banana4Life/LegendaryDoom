@@ -71,23 +71,26 @@ function loadTexture(gl) {
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     let raw = []
-    let color = []
-    for (let i = 0; i < 16; i++) {
-        if ((i + Math.floor(i / 4)) % 2 == 0) {
-            color = [255, 0, 0, 255]
-        } else {
-            color = [0, 0, 0, 255]
-        }
-        for (let j = 0; j < 4; j++) {
-
-            raw[i * 4 + j] = color[j];
+    let black = [0, 0, 0, 255]
+    let colors = [[255, 0, 0, 255], [0, 0, 255, 255]]
+    for (let y = 0; y < 4; y++) {
+        for (let i = 0; i < 2; i++) {
+            for (let x = 0; x < 4; x++) {
+                let color = black
+                let j = 8 * y + x + 4 * i
+                if ((j + Math.floor(j / 8)) % 2 == 0) {
+                    color = colors[i]
+                }
+                for (let c = 0; c < 4; c++) {
+                    raw.push(color[c]);
+                }
+            }
         }
     }
     console.log(raw)
     const pixels = new Uint8Array(raw)
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-    //gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 4, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
@@ -108,8 +111,8 @@ class Renderer {
             return;
         }
 
-        // gl.enable(gl.DEPTH_TEST)
-        // gl.depthFunc(gl.LEQUAL)
+        gl.enable(gl.DEPTH_TEST)
+        gl.depthFunc(gl.LEQUAL)
 
         let shaders = [
             loadShader(gl, "shaders/simple", ["vertexPosition", "textureCoord"],
@@ -127,29 +130,37 @@ class Renderer {
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 
-        const colors = [
-            0, 0,
-            1, 0,
-            0, 1,
-            1, 1
+        const textureCoords = [
+             0, 0,
+            .5, 0,
+             0, 1,
+            .5, 1,
+
+            .5, 0,
+             1, 0,
+            .5, 1,
+             1, 1
         ];
 
         const textureCoordBuffer = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW)
 
-        this.map = {
+        this.world = {
             vertices: vertices,
             buffers: {
                 vertices: vertexBuffer,
                 textureCoords: textureCoordBuffer
             },
-            rectangle: new Transform(),
+            rectangle0: new Transform(),
+            rectangle1: new Transform(),
             player: new Transform(),
             texture: loadTexture(gl)
         }
 
-        this.map.player.translate(0, 0, -6)
+        this.world.rectangle0.rotate(0, deg2rad(45), 0)
+        this.world.rectangle1.translate(-1, 1, -2)
+        this.world.player.translate(0, 0, -6)
 
         return Promise.all(shaders).then(shaders => {
             this.shaders = shaders;
@@ -159,7 +170,7 @@ class Renderer {
     shaders
     canvas
     webgl
-    map
+    world
 
     readonly fov = 90 * Math.PI / 180
     readonly near = 0.1;
@@ -174,30 +185,37 @@ class Renderer {
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.map.rectangle.rotate(0, deg2rad(120 * dt), 0)
+        this.world.rectangle0.rotate(0, deg2rad(120 * dt), 0)
 
         gl.clearColor(.2, .2, .2, 1)
-        // gl.clearDepth(1)
-        // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-        gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.clearDepth(1)
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.map.buffers.vertices);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.vertices);
         gl.vertexAttribPointer(this.shaders[0].attribute["vertexPosition"], 2, gl.FLOAT, false, 0, 0)
         gl.enableVertexAttribArray(this.shaders[0].attribute["vertexPosition"])
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.map.buffers.textureCoords);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords);
         gl.vertexAttribPointer(this.shaders[0].attribute["textureCoord"], 2, gl.FLOAT, false, 0, 0)
         gl.enableVertexAttribArray(this.shaders[0].attribute["textureCoord"])
 
         gl.useProgram(this.shaders[0].program)
 
-        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.map.rectangle.getMatrix())
-        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.map.player.getMatrix())
+        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.world.rectangle0.getMatrix())
+        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.world.player.getMatrix())
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
 
         gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this.map.texture)
+        gl.bindTexture(gl.TEXTURE_2D, this.world.texture)
         gl.uniform1i(this.shaders[0].uniform["sampler"], 0)
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.world.buffers.textureCoords);
+        gl.vertexAttribPointer(this.shaders[0].attribute["textureCoord"], 2, gl.FLOAT, false, 0, 8 * 4)
+        gl.enableVertexAttribArray(this.shaders[0].attribute["textureCoord"])
+
+        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.world.rectangle1.getMatrix())
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }
