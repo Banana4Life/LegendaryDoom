@@ -40,10 +40,6 @@ class WAD {
         this.header = header
         this.dictionary = dictionary
     }
-
-    getLump(name: string): WADLump | undefined {
-        return this.dictionary.get(name)
-    }
 }
 
 class WADLump {
@@ -58,7 +54,7 @@ class WADLump {
     }
 }
 
-type WADDictionary = Map<string, WADLump>
+type WADDictionary = WADLump[]
 
 function parseWad(file: File): Promise<WAD> {
     if (file.type !== WAD.FileMimeType) {
@@ -86,7 +82,7 @@ function parseHeader(buf: Uint8Array, offset: number, stringReader: StringReader
 }
 
 function parseDictionary(buf: Uint8Array, offset: number, lumpCount: number, stringReader: StringReader): WADDictionary {
-    let dict: WADDictionary = new Map<string, WADLump>();
+    let dict: WADDictionary = [];
 
     for (let i = 0; i < lumpCount; ++i) {
         let lumpOffset = offset + (i * WADLump.StructSize)
@@ -94,7 +90,7 @@ function parseDictionary(buf: Uint8Array, offset: number, lumpCount: number, str
         let dataLength = readU32LE(buf, lumpOffset + 4)
         let name = stringReader(buf, lumpOffset + 8, 8)
 
-        dict.set(name, new WADLump(name, buf.slice(dataPointer, dataPointer + dataLength)))
+        dict.push(new WADLump(name, buf.slice(dataPointer, dataPointer + dataLength)))
     }
 
     return dict
