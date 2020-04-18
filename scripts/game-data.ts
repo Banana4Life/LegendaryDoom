@@ -29,8 +29,8 @@ class DoomGame {
 
     static parseMaps(wad: WAD): DoomMap[] {
 
-        let originalName = /(?:E(\d+)M(\d+))/
-        let laterName = /MAP(\d+)/
+        let originalName = /^(?:E(\d+)M(\d+))$/
+        let laterName = /^MAP(\d+)$/
 
         function extractName(lump: WADLump): DoomMapName | null {
             let originalMatch = originalName.exec(lump.name)
