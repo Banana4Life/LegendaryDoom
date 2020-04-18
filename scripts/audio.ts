@@ -1,15 +1,21 @@
 enum Sound {
     SHOT = "external/shot.wav",
-    WAD_SHOT = "WAD:PISTOL"
+    PISTOL = "WAD:PISTOL",
+    PLASMA = "WAD:PLASMA",
+    START = "WAD:PSTART",
+    STOP = "WAD:PSTOP"
 }
 
 class AudioManager {
 
-    audioContext = new AudioContext();
+    audioContext: AudioContext
 
     audioCache = {}
 
     play(sound: Sound, volume: number = 1) {
+        if (!this.audioContext) {
+            this.audioContext = new AudioContext();
+        }
         if (!this.audioCache[sound]) {
             this.audioCache[sound] = this.newAudio(sound)
         }
@@ -18,15 +24,21 @@ class AudioManager {
             if (audio.paused || audio.ended) {
                 audio.play(this.audioContext, volume)
             }
-        } else if (audio.paused || audio.ended) {
-            audio.volume = volume
-            audio.play()
+        } else if (audio instanceof Audio) {
+            if (audio.paused || audio.ended) {
+                audio.volume = volume
+                audio.play()
+            }
+        } else {
+            console.log("Missing Sound " + sound)
         }
     }
 
     newAudio(sound: Sound) {
         if (sound.startsWith("WAD:")) {
-            return this.getWadSound(sound.substr(4))
+            if (game.doomGame) {
+                return this.getWadSound(sound.substr(4))
+            }
         } else {
             return new Audio(sound);
         }

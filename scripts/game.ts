@@ -16,7 +16,8 @@ class Game {
         if (this.controls.arePressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!";
             // game.audio.play(Sound.SHOT)
-            game.audio.play(Sound.WAD_SHOT, 0.2)
+            game.audio.play(Sound.PISTOL, 0.2)
+            game.audio.play(Sound.PLASMA, 0.2)
         } else {
             document.querySelector("h3").textContent = "DOOM awaits you!";
         }
@@ -28,8 +29,10 @@ class Game {
         document.querySelectorAll(".paused").forEach(e => {
             if (game.paused) {
                 e.classList.add("is-paused")
+                game.audio.play(Sound.STOP)
             } else {
                 e.classList.remove("is-paused")
+                game.audio.play(Sound.START)
             }
         })
     }
@@ -57,6 +60,13 @@ class Game {
     init() {
         this.controls.init(0,0)
         this.controls.keys.SPACEBAR.addCallback(this.togglePause)
+
+        // Load from external/doom.wad if possible
+        fetch("external/doom.wad").then(res => res.blob())
+            .then(blob => new File([blob], "doom.wad", {type: WAD.FileMimeType}))
+            .then(file => parseWad(file))
+            .then(wad => DoomGame.parse(wad)).then(doomGame => this.doomGame = doomGame)
+            .catch(any => undefined)
 
         this.renderer.initRenderer().then(this.startLoop)
 
