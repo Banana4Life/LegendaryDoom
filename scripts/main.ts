@@ -33,12 +33,21 @@ document.querySelectorAll('.drop-target').forEach(elem => {
     })
 })
 
+document.querySelectorAll("canvas").forEach(elem => {
+    elem.addEventListener("click", e => {
+        if (e.target instanceof Element) {
+            controls.lockPointer(e.target)
+        }
+    })
+})
+
 function callback(canvas, gl, shaders, map) {
     render(gl, shaders, map);
 }
 
 function main() {
     initRenderer(callback)
+    controls.init(0, 0)
 }
 
 window.onload = main;

@@ -1,6 +1,7 @@
 {
   "files": [
     "scripts/wad.ts",
+    "scripts/controls.ts",
     "scripts/math.ts",
     "scripts/renderer.ts",
     "scripts/main.ts"
