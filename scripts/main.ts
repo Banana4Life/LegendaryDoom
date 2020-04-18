@@ -26,14 +26,9 @@ document.querySelectorAll('.drop-target').forEach(elem => {
         e.preventDefault()
         dragEnd(e)
         if (e.dataTransfer.files.length > 0) {
-            let possibleWad = e.dataTransfer.files.item(0)
-            if (possibleWad.type == "application/x-doom-wad") {
-                possibleWad.arrayBuffer().then(buf => {
-                    let reader = readString("ASCII")
-                    let memory = new Uint8Array(buf)
-                    console.log(reader(memory, 0, 4), readU32LE(memory, 4), buf.byteLength)
-                })
-            }
+            parseWad(e.dataTransfer.files.item(0)).then(wad => {
+                console.log(wad.header.type, wad.header.lumpCount, wad.getLump("THINGS"))
+            })
         }
     })
 })
