@@ -457,8 +457,8 @@ class DoomSound {
     }
 
     static parse(buf: Uint8Array): DoomSound {
-        let format = readU16LE(buf, 0);
-        let sampleRate = readU16LE(buf, 2);
+        let format = readU16LE(buf, 0)
+        let sampleRate = readU16LE(buf, 2)
         let sampleCount = readU32LE(buf, 4)
         return new DoomSound(
             format,
