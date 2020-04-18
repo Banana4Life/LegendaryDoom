@@ -29,3 +29,9 @@ html, body {
     }
   }
 }
+
+canvas {
+  width: 640px;
+  height: 480px;
+  image-rendering: crisp-edges;
+}

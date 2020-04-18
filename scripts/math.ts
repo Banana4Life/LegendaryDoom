@@ -1,3 +1,6 @@
+// http://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+// https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+
 const mat4 = {
     identity: [
         1, 0, 0, 0,
@@ -54,7 +57,7 @@ const mat4 = {
         ];
     },
 
-    translate: function (x, y, z) {
+    translation: function (x, y, z) {
         return [
             1, 0, 0, 0,
             0, 1, 0, 0,
@@ -63,7 +66,7 @@ const mat4 = {
         ];
     },
 
-    scale: function (x, y, z) {
+    scaling: function (x, y, z) {
         return [
             x, 0, 0, 0,
             0, y, 0, 0,
@@ -72,29 +75,17 @@ const mat4 = {
         ];
     },
 
-    rotate: function (w, x, y, z) {
-        let a = [
-             w,  z, -y, x,
-            -z,  w,  x, y,
-             y, -x,  w, z,
-            -x,  y, -z, w
-        ];
+    rotation: function (w, x = 0, y = 0, z = 0) {
+        if (Array.isArray(w)) {
+            [w, x, y, z] = w;
+        }
 
-        let b = [
-             w,  z, -y, -x,
-            -z,  w,  x, -y,
-             y, -x,  w, -z,
-             x,  y,  z,  w
-        ];
-
-        return mat4.multiply(a, b);
-    },
-
-    rotateAngle: function(angle, x, y, z) {
-        let halfAngle = angle / 2;
-        let s = Math.sin(halfAngle);
-
-        return this.rotate(Math.cos(halfAngle), x * s, y * s, z * s);
+        return this.transpose([
+            1 - 2 * (y * y + z * z),     2 * (x * y - z * w),     2 * (x * z + y * w), 0,
+                2 * (x * y + z * w), 1 - 2 * (x * x + z * z),     2 * (y * z - x * w), 0,
+                2 * (x * z - y * w),     2 * (y * z + x * z), 1 - 2 * (x * x + y * y), 0,
+                                  0,                       0,                       0, 1
+        ])
     },
 
     perspective: function(fov, aspect, near, far) {
@@ -112,3 +103,7 @@ const mat4 = {
         ]
     }
 };
+
+function deg2rad(degrees) {
+    return degrees * Math.PI / 180
+}

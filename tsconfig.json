@@ -4,6 +4,7 @@
     "scripts/game-data.ts",
     "scripts/controls.ts",
     "scripts/math.ts",
+    "scripts/things.ts",
     "scripts/renderer.ts",
     "scripts/main.ts",
     "scripts/game.ts"

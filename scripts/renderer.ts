@@ -66,12 +66,18 @@ function loadShader(gl, baseName, attributes, uniforms) {
     });
 }
 
-class Renderer {
+function loadTexture(gl) {
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+}
 
+class Renderer {
     initRenderer() {
         this.canvas = document.querySelector("canvas");
-        this.webgl = this.canvas.getContext("webgl");
+        this.canvas.width = this.canvas.clientWidth;
+        this.canvas.height = this.canvas.clientHeight;
 
+        this.webgl = this.canvas.getContext("webgl");
         let gl = this.webgl;
 
         if (gl == null) {
@@ -79,8 +85,8 @@ class Renderer {
             return;
         }
 
-        gl.enable(gl.DEPTH_TEST)
-        gl.depthFunc(gl.LEQUAL)
+        // gl.enable(gl.DEPTH_TEST)
+        // gl.depthFunc(gl.LEQUAL)
 
         let shaders = [
             loadShader(gl, "shaders/simple", ["vertexPosition", "vertexColor"],
@@ -115,8 +121,11 @@ class Renderer {
                 vertices: vertexBuffer,
                 colors: colorBuffer
             },
-            model: mat4.identity
+            rectangle: new Transform(),
+            player: new Transform()
         }
+
+        this.map.player.translate(0, 0, -6)
 
         return Promise.all(shaders).then(shaders => {
             this.shaders = shaders;
@@ -128,12 +137,9 @@ class Renderer {
     webgl
     map
 
-    viewMatrix = mat4.translate(0, 0, -6)
-
     readonly fov = 90 * Math.PI / 180
     readonly near = 0.1;
     readonly far = 100;
-    readonly rotationMatrix = mat4.rotateAngle(-Math.PI / 180, 0, 0, 1)
 
     t = 0;
 
@@ -144,11 +150,12 @@ class Renderer {
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.map.model = mat4.multiply(this.map.model, this.rotationMatrix)
+        this.map.rectangle.rotate(0, deg2rad(1), 0)
 
         gl.clearColor(.2, .2, .2, 1)
-        gl.clearDepth(1)
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+        // gl.clearDepth(1)
+        // gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+        gl.clear(gl.COLOR_BUFFER_BIT)
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.map.buffers.vertices);
         gl.vertexAttribPointer(this.shaders[0].attribute["vertexPosition"], 2, gl.FLOAT, false, 0, 0)
@@ -160,8 +167,8 @@ class Renderer {
 
         gl.useProgram(this.shaders[0].program)
 
-        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.map.model)
-        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.viewMatrix)
+        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.map.rectangle.getMatrix())
+        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.map.player.getMatrix())
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
