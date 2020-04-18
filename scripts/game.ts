@@ -1,8 +1,9 @@
 class Game {
-    controls = new Controls();
-    renderer = new Renderer();
-    audio = new AudioManager();
-    paused = false;
+    controls = new Controls()
+    renderer = new Renderer()
+    audio = new AudioManager()
+    doomGame: DoomGame
+    paused = false
 
     update(dt) {
         this.update0(dt);
