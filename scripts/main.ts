@@ -41,13 +41,34 @@ document.querySelectorAll("canvas").forEach(elem => {
     })
 })
 
-function callback(canvas, gl, shaders, map) {
-    render(gl, shaders, map);
+function startLoop() {
+    this.updateLoop(window, 0, update)
+}
+
+function updateLoop(root, pt, callback) {
+    root.requestAnimationFrame(t => {
+        let dt = 0;
+        if (pt !== 0) {
+            dt = (t - pt) / 1000;
+        }
+        if (callback(dt) === false) {
+            return;
+        }
+        updateLoop(root, t, callback);
+    });
+}
+
+let renderer = new Renderer();
+
+function update(dt) {
+    // TODO game logic
+
+    renderer.render(dt);
 }
 
 function main() {
-    initRenderer(callback)
     controls.init(0, 0)
+    renderer.initRenderer().then(startLoop)
 }
 
 window.onload = main;
