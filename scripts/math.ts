@@ -6,24 +6,6 @@ const mat4 = {
         0, 0, 0, 1,
     ],
 
-    orthographicProjectionFull: function (left, right, top, bottom, near, far) {
-        return [
-            2 / (right - left), 0, 0, 0,
-            0, 2 / (top - bottom), 0, 0,
-            0, 0, 2 / (far - near), 0,
-            -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((far + near) / (far - near)), 1
-        ]
-    },
-
-    orthographicProjection: function (width, height, depth) {
-        return [
-            2 / width, 0, 0, 0,
-            0, 2 / height, 0, 0,
-            0, 0, 2 / depth, 0,
-            0, 0, 0, 1,
-        ];
-    },
-
     transpose: function (a) {
         return [
             a[0], a[4], a[8], a[12],
@@ -92,20 +74,27 @@ const mat4 = {
 
     rotate: function (w, x, y, z) {
         let a = [
-            w, z, -y, x,
-            -z, w, x, y,
-            y, -x, w, z,
-            -x, y, -z, w
+             w,  z, -y, x,
+            -z,  w,  x, y,
+             y, -x,  w, z,
+            -x,  y, -z, w
         ];
 
         let b = [
-            w, z, -y, -x,
-            -z, w, x, -y,
-            y, -x, w, -z,
-            x, y, z, w
+             w,  z, -y, -x,
+            -z,  w,  x, -y,
+             y, -x,  w, -z,
+             x,  y,  z,  w
         ];
 
         return mat4.multiply(a, b);
+    },
+
+    rotateAngle: function(angle, x, y, z) {
+        let halfAngle = angle / 2;
+        let s = Math.sin(halfAngle);
+
+        return this.rotate(Math.cos(halfAngle), x * s, y * s, z * s);
     },
 
     perspective: function(fov, aspect, near, far) {

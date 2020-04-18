@@ -79,20 +79,39 @@ function initRenderer(callback) {
     gl.depthFunc(gl.LEQUAL)
 
     let shaders = [
-        loadShader(gl, "shaders/simple", ["vertexPosition"], ["projectionMatrix", "modelViewMatrix"])
+        loadShader(gl, "shaders/simple", ["vertexPosition", "vertexColor"],
+            ["modelMatrix", "viewMatrix", "projectionMatrix"])
     ];
 
-    const vertices = [-1, 1, 1, 1, -1, -1, 1, -1]
+    const vertices = [
+        -1,  1,
+         1,  1,
+        -1, -1,
+         1, -1
+    ]
 
     const vertexBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
 
+    const colors = [
+        1, 1, 1, 1, // white
+        1, 0, 0, 1, // red
+        0, 1, 0, 1, // green
+        0, 0, 1, 1  // blue
+    ];
+
+    const colorBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW)
+
     const map = {
         vertices: vertices,
         buffers: {
-            vertices: vertexBuffer
-        }
+            vertices: vertexBuffer,
+            colors: colorBuffer
+        },
+        model: mat4.identity
     }
 
     Promise.all(shaders).then(loadedShaders => {
@@ -102,17 +121,20 @@ function initRenderer(callback) {
     });
 }
 
-const fov = 45 * Math.PI / 180
+const fov = 90 * Math.PI / 180
 const near = 0.1;
 const far = 100;
-const modelViewMatrix = mat4.translate(0, 0, -6)
+let viewMatrix = mat4.translate(0, 0, -6)
+const rotationMatrix = mat4.rotateAngle(-Math.PI / 180, 0, 0, 1)
 
 function render(gl, shaders, map) {
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
     const projectionMatrix = mat4.perspective(fov, aspect, near, far)
 
+    map.model = mat4.multiply(map.model, rotationMatrix)
+
     window.requestAnimationFrame(t => {
-        gl.clearColor((t % 1000) / 1000, 0, 0, 1)
+        gl.clearColor(0.2, 0.2, 0.2, 1)
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -120,10 +142,15 @@ function render(gl, shaders, map) {
         gl.vertexAttribPointer(shaders[0].attribute["vertexPosition"], 2, gl.FLOAT, false, 0, 0)
         gl.enableVertexAttribArray(shaders[0].attribute["vertexPosition"])
 
+        gl.bindBuffer(gl.ARRAY_BUFFER, map.buffers.colors);
+        gl.vertexAttribPointer(shaders[0].attribute["vertexColor"], 4, gl.FLOAT, false, 0, 0)
+        gl.enableVertexAttribArray(shaders[0].attribute["vertexColor"])
+
         gl.useProgram(shaders[0].program)
 
+        gl.uniformMatrix4fv(shaders[0].uniform["modelMatrix"], false, map.model)
+        gl.uniformMatrix4fv(shaders[0].uniform["viewMatrix"], false, viewMatrix)
         gl.uniformMatrix4fv(shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
-        gl.uniformMatrix4fv(shaders[0].uniform["modelViewMatrix"], false, modelViewMatrix)
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
 
