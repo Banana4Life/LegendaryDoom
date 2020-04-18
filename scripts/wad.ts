@@ -11,6 +11,26 @@ function readString(encoding: string): StringReader {
         return encoder.decode(slice);
     };
 }
+const readASCIIString = readString("ASCII")
+
+function unsignedToSigned(bits: number): (n: number) => number {
+    let shift = bits - 1
+    return n => {
+        let sign = n >> shift
+        if (sign == 0) {
+            return n
+        } else {
+            return -1 * (n & ~(1 << shift));
+        }
+    }
+}
+
+const u16ToI16 = unsignedToSigned(16)
+const u32ToI32 = unsignedToSigned(32)
+
+function readI16LE(buf: Uint8Array, at: number): number {
+    return u16ToI16(readU16LE(buf, at))
+}
 
 function readU16LE(buf: Uint8Array, at: number): number {
     return (buf[at + 1] << 8) | buf[at]
@@ -64,18 +84,17 @@ function parseWad(file: File): Promise<WAD> {
     if (file.type !== WAD.FileMimeType) {
         return Promise.reject(`Unsupported mime type! Requires: ${WAD.FileMimeType}, but was ${file.type}`)
     }
-    let readASCIIString = readString("ASCII")
     return file.arrayBuffer().then(buf => {
         let memory = new Uint8Array(buf)
-        return parseHeader(memory, 0, readASCIIString).then(header => {
-            let dict = parseDictionary(memory, header.dictionaryPointer, header.lumpCount, readASCIIString)
+        return parseHeader(memory, 0).then(header => {
+            let dict = parseDictionary(memory, header.dictionaryPointer, header.lumpCount)
             return new WAD(header, dict)
         })
     })
 }
 
-function parseHeader(buf: Uint8Array, offset: number, stringReader: StringReader): Promise<WADHeader> {
-    let type = stringReader(buf, offset, 4)
+function parseHeader(buf: Uint8Array, offset: number): Promise<WADHeader> {
+    let type = readASCIIString(buf, offset, 4)
     if (type == "IWAD" || type == "PWAD") {
         let lumpCount = readU32LE(buf, 4)
         let dictPointer = readU32LE(buf, 8)
@@ -85,14 +104,14 @@ function parseHeader(buf: Uint8Array, offset: number, stringReader: StringReader
     }
 }
 
-function parseDictionary(buf: Uint8Array, offset: number, lumpCount: number, stringReader: StringReader): WADDictionary {
+function parseDictionary(buf: Uint8Array, offset: number, lumpCount: number): WADDictionary {
     let dict: WADDictionary = [];
 
     for (let i = 0; i < lumpCount; ++i) {
         let lumpOffset = offset + (i * WADLump.StructSize)
         let dataPointer = readU32LE(buf, lumpOffset)
         let dataLength = readU32LE(buf, lumpOffset + 4)
-        let name = stringReader(buf, lumpOffset + 8, 8)
+        let name = readASCIIString(buf, lumpOffset + 8, 8)
 
         dict.push(new WADLump(name, buf.slice(dataPointer, dataPointer + dataLength)))
     }
