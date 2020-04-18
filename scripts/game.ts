@@ -1,6 +1,7 @@
 class Game {
     controls = new Controls();
     renderer = new Renderer();
+    paused = false;
 
     update(dt) {
         this.update0(dt);
@@ -11,17 +12,31 @@ class Game {
     private update0(dt) {
         // TODO actual game logic
         if (this.controls.arePressed(this.controls.keys.MOVE_FORWARD)) {
-            document.querySelector("#main > h3").textContent = "You are getting closer too DOOM!";
+            document.querySelector("h3").textContent = "You are getting closer too DOOM!";
         } else {
-            document.querySelector("#main > h3").textContent = "DOOM awaits you!";
+            document.querySelector("h3").textContent = "DOOM awaits you!";
         }
+    }
+
+    togglePause() {
+        game.paused = !game.paused;
+        console.log("Paused? " + game.paused)
+        document.querySelectorAll(".paused").forEach(e => {
+            if (game.paused) {
+                e.classList.add("is-paused")
+            } else {
+                e.classList.remove("is-paused")
+            }
+        })
     }
 
     updateLoop(root, pt: number) {
         root.requestAnimationFrame(t => {
             let dt = 0;
-            if (pt !== 0) {
-                dt = (t - pt) / 1000;
+            if (!game.paused) {
+                if (pt !== 0) {
+                    dt = (t - pt) / 1000;
+                }
             }
             if (game.update(dt) === false) {
                 return;
@@ -31,12 +46,16 @@ class Game {
     }
 
     private startLoop() {
+        this.paused = false;
         game.updateLoop(window, 0)
     }
 
     init() {
         this.controls.init(0,0)
+        this.controls.keys.SPACEBAR.addCallback(this.togglePause)
+
         this.renderer.initRenderer().then(this.startLoop)
+
     }
 
 }
