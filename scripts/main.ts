@@ -28,6 +28,8 @@ document.querySelectorAll('.drop-target').forEach(elem => {
         if (e.dataTransfer.files.length > 0) {
             parseWad(e.dataTransfer.files.item(0)).then(wad => {
                 console.log(wad.header.type, wad.header.lumpCount, wad.dictionary.length)
+                let game = DoomGame.parse(wad)
+                console.log(game.maps.length)
             })
         }
     })

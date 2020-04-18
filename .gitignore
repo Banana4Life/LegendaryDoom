@@ -3,5 +3,5 @@ style/.sass-cache
 .idea/
 scripts/*.js
 scripts/*.js.map
-style/*.css
-style/*.css.map
+style/**/*.css
+style/**/*.css.map
