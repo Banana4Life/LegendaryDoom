@@ -37,12 +37,12 @@ document.querySelectorAll('.drop-target').forEach(elem => {
     })
 })
 
-function callback(canvas, gl, shaders) {
-    render(gl, shaders);
+function callback(canvas, gl, shaders, map) {
+    render(gl, shaders, map);
 }
 
 function main() {
-    initCanvas(callback)
+    initRenderer(callback)
 }
 
 window.onload = main;
