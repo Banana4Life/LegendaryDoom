@@ -33,42 +33,8 @@ document.querySelectorAll('.drop-target').forEach(elem => {
     })
 })
 
-document.querySelectorAll("canvas").forEach(elem => {
-    elem.addEventListener("click", e => {
-        if (e.target instanceof Element) {
-            controls.lockPointer(e.target)
-        }
-    })
-})
-
-function startLoop() {
-    this.updateLoop(window, 0, update)
-}
-
-function updateLoop(root, pt, callback) {
-    root.requestAnimationFrame(t => {
-        let dt = 0;
-        if (pt !== 0) {
-            dt = (t - pt) / 1000;
-        }
-        if (callback(dt) === false) {
-            return;
-        }
-        updateLoop(root, t, callback);
-    });
-}
-
-let renderer = new Renderer();
-
-function update(dt) {
-    // TODO game logic
-
-    renderer.render(dt);
-}
-
 function main() {
-    controls.init(0, 0)
-    renderer.initRenderer().then(startLoop)
+    game.init();
 }
 
 window.onload = main;

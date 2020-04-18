@@ -5,7 +5,8 @@
     "scripts/controls.ts",
     "scripts/math.ts",
     "scripts/renderer.ts",
-    "scripts/main.ts"
+    "scripts/main.ts",
+    "scripts/game.ts"
   ],
   "compilerOptions": {
     "inlineSourceMap": true,

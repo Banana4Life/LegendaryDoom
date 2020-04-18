@@ -1,35 +1,14 @@
-class ConfigurableKey {
-    codes
-
-    constructor(...codes: String[]) {
-        this.codes = codes
-    }
-
-    configure(...codes: String[]) {
-        this.codes = codes
-    }
-
-    isPressed(pressedKeys: String[]): boolean {
-        for (const pressedKey of pressedKeys) {
-            if (this.codes.contains(pressedKey)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-}
-
-let keys = {
-    MOVE_FORWARD: new ConfigurableKey("KeyW", "ArrowUp"),
-    MOVE_BACKWARD: new ConfigurableKey("KeyS", "ArrowDown"),
-    MOVE_LEFT: new ConfigurableKey("KeyA", "ArrowLeft"),
-    MOVE_RIGHT: new ConfigurableKey("KeyD", "ArrowRight"),
-
-    ESACAPE: new ConfigurableKey("Escape"),
-}
-
 class Controls {
+
+    keys = {
+        MOVE_FORWARD: new ConfigurableKey("KeyW", "ArrowUp"),
+        MOVE_BACKWARD: new ConfigurableKey("KeyS", "ArrowDown"),
+        MOVE_LEFT: new ConfigurableKey("KeyA", "ArrowLeft"),
+        MOVE_RIGHT: new ConfigurableKey("KeyD", "ArrowRight"),
+
+        ESACAPE: new ConfigurableKey("Escape"),
+    }
+
     pressedKeys: String[] = []
     mousePos = {
         x: 0,
@@ -54,13 +33,22 @@ class Controls {
     private magicWords = "";
 
     private initListeners() {
+
+        document.querySelectorAll("canvas").forEach(elem => {
+            elem.addEventListener("click", e => {
+                if (e.target instanceof Element) {
+                    this.lockPointer(e.target)
+                }
+            })
+        })
+
         window.addEventListener("beforeunload", e => {
             e.preventDefault()
         })
 
         document.addEventListener("keydown", (e: KeyboardEvent) => {
             // console.log(`DOWN ${e.code}`)
-            controls.pressedKeys.push(e.code)
+            this.pressedKeys.push(e.code)
             if (!e.code.startsWith("F")) {
                 e.preventDefault()
             }
@@ -76,7 +64,7 @@ class Controls {
 
         document.addEventListener("keyup", (e: KeyboardEvent) => {
             // console.log(`UP ${e.code}`)
-            controls.pressedKeys.splice(controls.pressedKeys.indexOf(e.code))
+            this.pressedKeys.splice(this.pressedKeys.indexOf(e.code))
         })
         document.addEventListener("click", (e: MouseEvent) => {
             console.log(`CLICK ${this.mousePos.x}:${this.mousePos.y}`)
@@ -115,5 +103,25 @@ class Controls {
 
 }
 
-let controls = new Controls()
+class ConfigurableKey {
+    codes
+
+    constructor(...codes: String[]) {
+        this.codes = codes
+    }
+
+    configure(...codes: String[]) {
+        this.codes = codes
+    }
+
+    isPressed(pressedKeys: String[]): boolean {
+        for (const pressedKey of pressedKeys) {
+            if (this.codes.indexOf(pressedKey) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+}
 
