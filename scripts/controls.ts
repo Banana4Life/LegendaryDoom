@@ -6,7 +6,8 @@ class Controls {
         MOVE_LEFT: new ConfigurableKey("KeyA", "ArrowLeft"),
         MOVE_RIGHT: new ConfigurableKey("KeyD", "ArrowRight"),
 
-        ESACAPE: new ConfigurableKey("Escape"),
+        ESCAPE: new ConfigurableKey("Escape"),
+        SPACEBAR: new ConfigurableKey("Space"),
     }
 
     pressedKeys: String[] = []
@@ -23,7 +24,7 @@ class Controls {
 
     arePressed(...keys: ConfigurableKey[]) {
         for (const key of keys) {
-            if (key.isPressed(this.pressedKeys)) {
+            if (key.hasCodeIn(this.pressedKeys)) {
                 return true;
             }
         }
@@ -60,6 +61,15 @@ class Controls {
                 this.doMagic();
             }
             this.magicWords += e.key;
+
+            for (let keysKey in this.keys) {
+                let key: ConfigurableKey = this.keys[keysKey]
+                if (key.callbacks.length > 0) {
+                    if (key.hasCode(e.code)) {
+                        key.makeCallbacks(e);
+                    }
+                }
+            }
         })
 
         document.addEventListener("keyup", (e: KeyboardEvent) => {
@@ -114,7 +124,7 @@ class ConfigurableKey {
         this.codes = codes
     }
 
-    isPressed(pressedKeys: String[]): boolean {
+    hasCodeIn(pressedKeys: String[]): boolean {
         for (const pressedKey of pressedKeys) {
             if (this.codes.indexOf(pressedKey) >= 0) {
                 return true;
@@ -123,5 +133,22 @@ class ConfigurableKey {
         return false;
     }
 
+    hasCode(pressedKey: String): boolean {
+        if (this.codes.indexOf(pressedKey) >= 0) {
+            return true;
+        }
+    }
+
+    callbacks = []
+
+    addCallback(callback) {
+        this.callbacks.push(callback);
+    }
+
+    makeCallbacks(event: KeyboardEvent) {
+        for (const callback of this.callbacks) {
+            callback(event);
+        }
+    }
 }
 
