@@ -1,10 +1,13 @@
 class DoomGame {
     readonly wad: WAD
+    readonly colorMap: DoomColorMap;
     readonly maps: DoomMap[]
+
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(wad: WAD, maps: DoomMap[]) {
+    constructor(wad: WAD, colorMap: DoomColorMap, maps: DoomMap[]) {
         this.wad = wad
+        this.colorMap = colorMap
         this.maps = maps
         this.mapLookup = new Map<DoomMapName, DoomMap>()
         for (let map of maps) {
@@ -12,7 +15,21 @@ class DoomGame {
         }
     }
 
-    static parseMaps(wad: WAD): DoomMap[] {
+    getMap(name: DoomMapName): DoomMap | undefined {
+        return this.mapLookup.get(name)
+    }
+
+    getSound(name: string): DoomSound | null {
+        let soundLumpName = `DS${name}`.toUpperCase()
+        for (let lump of this.wad.dictionary) {
+            if (lump.name === soundLumpName) {
+                return DoomSound.parse(lump.data)
+            }
+        }
+        return null
+    }
+
+    private static parseMaps(wad: WAD): DoomMap[] {
 
         let originalName = /^(?:E(\d+)M(\d+))$/
         let laterName = /^MAP(\d+)$/
@@ -52,10 +69,29 @@ class DoomGame {
 
     }
 
+    private static parseColorMap(wad: WAD): DoomColorMap {
+        function findColorMapLump(dict: WADDictionary): WADLump | null {
+            for (let lump of dict) {
+                if (lump.name === "COLORMAP") {
+                    return lump
+                }
+            }
+            return null
+        }
+
+        let lump = findColorMapLump(wad.dictionary)
+        if (lump === null) {
+            return null
+        }
+
+        return DoomColorMap.parse(lump.data)
+    }
+
     static parse(wad: WAD): DoomGame {
+        let colorMap = DoomGame.parseColorMap(wad)
         let maps = DoomGame.parseMaps(wad)
 
-        return new DoomGame(wad, maps)
+        return new DoomGame(wad, colorMap, maps)
     }
 
     getMap(name: DoomMapName): DoomMap | undefined {
@@ -466,5 +502,27 @@ class DoomSound {
             sampleCount,
             buf.slice(24, 24 + sampleCount)
         )
+    }
+}
+
+class DoomColorMap {
+    readonly maps: number[][]
+
+    constructor(maps: number[][]) {
+        this.maps = maps;
+    }
+
+    static parse(buf: Uint8Array): DoomColorMap {
+        const mapSize = 256
+        let maps: number[][] = []
+        for (let i = 0; i < buf.length; i += mapSize) {
+            let map: number[] = new Array<number>(mapSize)
+            for (let j = 0; j < mapSize; ++j) {
+                map[j] = buf[i]
+            }
+            maps.push(map)
+        }
+
+        return new DoomColorMap(maps)
     }
 }
