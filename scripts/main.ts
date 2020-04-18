@@ -5,7 +5,7 @@ function dragStart(e: DragEvent): void {
 }
 function dragEnd(e: DragEvent): void {
     if (e.target instanceof Element) {
-        e.target.classList.add('drag-hover')
+        e.target.classList.remove('drag-hover')
     }
 }
 

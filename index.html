@@ -6,15 +6,26 @@
     <link rel="stylesheet" href="style/style.css">
 </head>
 <body>
-
 <div id="main">
-    <h3>DOOM awaits you</h3>
-
-    <canvas></canvas>
-</div>
-
-<div class="drop-target">
-    <span>Drop it!</span>
+    <div id="menu-panel">
+        <div>
+            <div>
+                <h3>DOOM awaits you</h3>
+            </div>
+            <div class="drop-target">
+                <span class="drop">Drop it!</span>
+                <span class="hint">wad</span>
+            </div>
+        </div>
+    </div>
+    <div id="game-panel">
+        <div>
+            <canvas></canvas>
+            <div class="paused">
+                <div>Game Paused</div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!--You made this?-->

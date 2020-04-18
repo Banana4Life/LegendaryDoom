@@ -9,25 +9,25 @@ class Game {
         return true
     }
 
-    pause() {
-        this.paused = true;
-    }
-    resume() {
-        this.paused = false;
-    }
-
     private update0(dt) {
         // TODO actual game logic
         if (this.controls.arePressed(this.controls.keys.MOVE_FORWARD)) {
-            document.querySelector("#main > h3").textContent = "You are getting closer too DOOM!";
+            document.querySelector("h3").textContent = "You are getting closer too DOOM!";
         } else {
-            document.querySelector("#main > h3").textContent = "DOOM awaits you!";
+            document.querySelector("h3").textContent = "DOOM awaits you!";
         }
     }
 
     togglePause() {
         game.paused = !game.paused;
         console.log("Paused? " + game.paused)
+        document.querySelectorAll(".paused").forEach(e => {
+            if (game.paused) {
+                e.classList.add("is-paused")
+            } else {
+                e.classList.remove("is-paused")
+            }
+        })
     }
 
     updateLoop(root, pt: number) {
