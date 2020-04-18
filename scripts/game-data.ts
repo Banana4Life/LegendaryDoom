@@ -93,21 +93,6 @@ class DoomGame {
 
         return new DoomGame(wad, colorMap, maps)
     }
-
-    getMap(name: DoomMapName): DoomMap | undefined {
-        return this.mapLookup.get(name)
-    }
-
-    getSound(name: string): DoomSound | null {
-        let soundLumpName = `DS${name}`.toUpperCase()
-        for (let lump of this.wad.dictionary) {
-            if (lump.name === soundLumpName) {
-                return DoomSound.parse(lump.data)
-            }
-        }
-        return null
-    }
-
 }
 
 type DoomMapName = { x: number, y: number } | { n: number }
