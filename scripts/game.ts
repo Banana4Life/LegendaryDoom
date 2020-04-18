@@ -14,7 +14,8 @@ class Game {
         // TODO actual game logic
         if (this.controls.arePressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!";
-            game.audio.play(Sound.SHOT)
+            // game.audio.play(Sound.SHOT)
+            game.audio.play(Sound.WAD_SHOT)
         } else {
             document.querySelector("h3").textContent = "DOOM awaits you!";
         }
