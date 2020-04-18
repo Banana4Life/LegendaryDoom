@@ -1,9 +1,11 @@
 
 class DoomGame {
+    readonly wad: WAD
     readonly maps: DoomMap[]
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(maps: DoomMap[]) {
+    constructor(wad: WAD, maps: DoomMap[]) {
+        this.wad = wad;
         this.maps = maps;
         this.mapLookup = new Map<DoomMapName, DoomMap>()
         for (let map of maps) {
@@ -13,6 +15,16 @@ class DoomGame {
 
     getMap(name: DoomMapName): DoomMap | undefined {
         return this.mapLookup.get(name)
+    }
+
+    getSound(name: string): DoomSound | null {
+        let soundLumpName = `DS${name}`.toUpperCase()
+        for (let lump of this.wad.dictionary) {
+            if (lump.name === soundLumpName) {
+                return DoomSound.parse(lump.data)
+            }
+        }
+        return null
     }
 
     static parseMaps(wad: WAD): DoomMap[] {
@@ -58,7 +70,7 @@ class DoomGame {
     static parse(wad: WAD): DoomGame {
         let maps = DoomGame.parseMaps(wad)
 
-        return new DoomGame(maps)
+        return new DoomGame(wad, maps)
     }
 
 }
@@ -428,5 +440,31 @@ class DoomBlockMap {
         }
 
         return new DoomBlockMap(originX, originY, columnCount, rowCount, lineDefMap)
+    }
+}
+
+class DoomSound {
+    readonly format: number
+    readonly sampleRate: number
+    readonly sampleCount: number
+    readonly samples: Uint8Array
+
+    constructor(format: number, sampleRate: number, sampleCount: number, samples: Uint8Array) {
+        this.format = format;
+        this.sampleRate = sampleRate;
+        this.sampleCount = sampleCount;
+        this.samples = samples;
+    }
+
+    static parse(buf: Uint8Array): DoomSound {
+        let format = readU16LE(buf, 0);
+        let sampleRate = readU16LE(buf, 2);
+        let sampleCount = readU32LE(buf, 4)
+        return new DoomSound(
+            format,
+            sampleRate,
+            sampleCount,
+            buf.slice(24, 24 + sampleCount)
+        )
     }
 }
