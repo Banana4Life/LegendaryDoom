@@ -144,7 +144,9 @@ class Renderer {
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.map.model = mat4.multiply(this.map.model, this.rotationMatrix)
+        if (dt !== 0) {
+            this.map.model = mat4.multiply(this.map.model, this.rotationMatrix)
+        }
 
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
