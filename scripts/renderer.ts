@@ -66,94 +66,105 @@ function loadShader(gl, baseName, attributes, uniforms) {
     });
 }
 
-function initRenderer(callback) {
-    let canvas = document.querySelector("canvas");
-    let gl = canvas.getContext("webgl");
+class Renderer {
 
-    if (gl == null) {
-        alert("Unable to initialize WebGL!");
-        return;
+    initRenderer() {
+        this.canvas = document.querySelector("canvas");
+        this.webgl = this.canvas.getContext("webgl");
+
+        let gl = this.webgl;
+
+        if (gl == null) {
+            alert("Unable to initialize WebGL!");
+            return;
+        }
+
+        gl.enable(gl.DEPTH_TEST)
+        gl.depthFunc(gl.LEQUAL)
+
+        let shaders = [
+            loadShader(gl, "shaders/simple", ["vertexPosition", "vertexColor"],
+                ["modelMatrix", "viewMatrix", "projectionMatrix"])
+        ];
+
+        const vertices = [
+            -1,  1,
+             1,  1,
+            -1, -1,
+             1, -1
+        ]
+
+        const vertexBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+
+        const colors = [
+            1, 1, 1, 1, // white
+            1, 0, 0, 1, // red
+            0, 1, 0, 1, // green
+            0, 0, 1, 1  // blue
+        ];
+
+        const colorBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW)
+
+        this.map = {
+            vertices: vertices,
+            buffers: {
+                vertices: vertexBuffer,
+                colors: colorBuffer
+            },
+            model: mat4.identity
+        }
+
+        return Promise.all(shaders).then(shaders => {
+            this.shaders = shaders;
+        })
     }
 
-    gl.enable(gl.DEPTH_TEST)
-    gl.depthFunc(gl.LEQUAL)
+    shaders
+    canvas
+    webgl
+    map
 
-    let shaders = [
-        loadShader(gl, "shaders/simple", ["vertexPosition", "vertexColor"],
-            ["modelMatrix", "viewMatrix", "projectionMatrix"])
-    ];
+    viewMatrix = mat4.translate(0, 0, -6)
 
-    const vertices = [
-        -1,  1,
-         1,  1,
-        -1, -1,
-         1, -1
-    ]
+    readonly fov = 90 * Math.PI / 180
+    readonly near = 0.1;
+    readonly far = 100;
+    readonly rotationMatrix = mat4.rotateAngle(-Math.PI / 180, 0, 0, 1)
 
-    const vertexBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+    t = 0;
 
-    const colors = [
-        1, 1, 1, 1, // white
-        1, 0, 0, 1, // red
-        0, 1, 0, 1, // green
-        0, 0, 1, 1  // blue
-    ];
+    render(dt) {
+        this.t += dt;
+        let gl = this.webgl
 
-    const colorBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW)
+        const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
+        const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-    const map = {
-        vertices: vertices,
-        buffers: {
-            vertices: vertexBuffer,
-            colors: colorBuffer
-        },
-        model: mat4.identity
-    }
+        this.map.model = mat4.multiply(this.map.model, this.rotationMatrix)
 
-    Promise.all(shaders).then(loadedShaders => {
-        callback(canvas, gl, loadedShaders, map);
-    }, err => {
-        console.error("Error!", err)
-    });
-}
-
-const fov = 90 * Math.PI / 180
-const near = 0.1;
-const far = 100;
-let viewMatrix = mat4.translate(0, 0, -6)
-const rotationMatrix = mat4.rotateAngle(-Math.PI / 180, 0, 0, 1)
-
-function render(gl, shaders, map) {
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
-    const projectionMatrix = mat4.perspective(fov, aspect, near, far)
-
-    map.model = mat4.multiply(map.model, rotationMatrix)
-
-    window.requestAnimationFrame(t => {
-        gl.clearColor(0.2, 0.2, 0.2, 1)
+        gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, map.buffers.vertices);
-        gl.vertexAttribPointer(shaders[0].attribute["vertexPosition"], 2, gl.FLOAT, false, 0, 0)
-        gl.enableVertexAttribArray(shaders[0].attribute["vertexPosition"])
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.map.buffers.vertices);
+        gl.vertexAttribPointer(this.shaders[0].attribute["vertexPosition"], 2, gl.FLOAT, false, 0, 0)
+        gl.enableVertexAttribArray(this.shaders[0].attribute["vertexPosition"])
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, map.buffers.colors);
-        gl.vertexAttribPointer(shaders[0].attribute["vertexColor"], 4, gl.FLOAT, false, 0, 0)
-        gl.enableVertexAttribArray(shaders[0].attribute["vertexColor"])
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.map.buffers.colors);
+        gl.vertexAttribPointer(this.shaders[0].attribute["vertexColor"], 4, gl.FLOAT, false, 0, 0)
+        gl.enableVertexAttribArray(this.shaders[0].attribute["vertexColor"])
 
-        gl.useProgram(shaders[0].program)
+        gl.useProgram(this.shaders[0].program)
 
-        gl.uniformMatrix4fv(shaders[0].uniform["modelMatrix"], false, map.model)
-        gl.uniformMatrix4fv(shaders[0].uniform["viewMatrix"], false, viewMatrix)
-        gl.uniformMatrix4fv(shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
+        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, this.map.model)
+        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.viewMatrix)
+        gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-
-        render(gl, shaders, map)
-    })
+    }
 }
+

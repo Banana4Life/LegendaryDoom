@@ -33,12 +33,8 @@ document.querySelectorAll('.drop-target').forEach(elem => {
     })
 })
 
-function callback(canvas, gl, shaders, map) {
-    render(gl, shaders, map);
-}
-
 function main() {
-    initRenderer(callback)
+    game.init();
 }
 
 window.onload = main;

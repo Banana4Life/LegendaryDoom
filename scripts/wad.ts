@@ -12,6 +12,10 @@ function readString(encoding: string): StringReader {
     };
 }
 
+function readU16LE(buf: Uint8Array, at: number): number {
+    return (buf[at + 1] << 8) | buf[at]
+}
+
 function readU32LE(buf: Uint8Array, at: number): number {
     return (buf[at + 3] << 24) | (buf[at + 2] << 16) | (buf[at + 1] << 8) | buf[at]
 }
