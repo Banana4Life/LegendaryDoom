@@ -10,7 +10,14 @@ class Controls {
         SPACEBAR: new ConfigurableKey("Space"),
     }
 
+    buttons = {
+        LEFT: 0,
+        MIDDLE: 1,
+        RIGHT: 2
+    }
+
     pressedKeys: String[] = []
+    pressedButton: number[] = []
     mousePos = {
         x: 0,
         y: 0
@@ -22,13 +29,23 @@ class Controls {
         this.mousePos.y = mouseY
     }
 
-    arePressed(...keys: ConfigurableKey[]) {
-        for (const key of keys) {
-            if (key.hasCodeIn(this.pressedKeys)) {
-                return true;
+
+    buttonPressed(...buttons: number[]) {
+        for (const button of buttons) {
+            if (this.pressedButton.indexOf(button) >= 0) {
+                return true
             }
         }
-        return false;
+        return false
+    }
+
+    keyPressed(...keys: ConfigurableKey[]) {
+        for (const key of keys) {
+            if (key.hasCodeIn(this.pressedKeys)) {
+                return true
+            }
+        }
+        return false
     }
 
     private magicWords = "";
@@ -81,10 +98,12 @@ class Controls {
         })
 
         document.addEventListener("mousedown", (e: MouseEvent) => {
+            this.pressedButton.push(e.button)
             // console.log(`CLICK ${this.mousePos.x}:${this.mousePos.y}`)
         })
 
         document.addEventListener("mouseup", (e: MouseEvent) => {
+            this.pressedButton.splice(this.pressedButton.indexOf(e.button))
             // console.log(`CLICK ${this.mousePos.x}:${this.mousePos.y}`)
         })
 
