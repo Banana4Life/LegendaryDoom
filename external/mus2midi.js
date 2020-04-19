@@ -4,7 +4,7 @@
 // Read a MUS file from a lump data (musinput) and output a MIDI blob
 //
 // Returns ArrayBuffer if successful, false otherwise
-function mus2midi(musinput) {
+function mus2midi(musinput, name) {
     // MUS event codes
     var mus_releasekey          = 0x00;
     var mus_presskey            = 0x10;
@@ -326,11 +326,11 @@ function mus2midi(musinput) {
 
     function convertMusToMidi(musinput)
     {
+        logToGameConsole(`Converting MUS ${name}`)
         // master dataview for input mus
         musDataView = new DataView(musinput);
         musDataPosition = 0;
 
-        console.log('start mus2midi');
         var startTime = Date.now();
 
         function getMusByte8() {
@@ -506,8 +506,7 @@ function mus2midi(musinput) {
                 queuedtime += timedelay;
             }
         }
-        console.log('finish writing');
-        console.log('time: ' +(Date.now()-startTime));
+        logToGameConsole(`MIDI ${name} created in ${Date.now() - startTime}ms`);
         // End of track
         writeEndTrack();
 

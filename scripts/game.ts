@@ -56,7 +56,8 @@ class Game {
     init(): Promise<void> {
         this.controls.init(0, 0)
         this.controls.keys.SPACEBAR.addCallback(this.togglePause.bind(this))
-        this.controls.keys.M.addCallback(() => this.audio.toggleMusic(true))
+        this.controls.keys.MUTE_MUSIC.addCallback(() => this.audio.toggleMusic(true))
+        this.controls.keys.MUTE_SOUND.addCallback( () => this.audio.toggleSounds())
 
         let playerThing = this.doomGame.maps[0].things[0]
         this.cameraTransform.setTranslation(-playerThing.y, -41, -playerThing.x)

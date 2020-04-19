@@ -81,8 +81,8 @@ midi.loadMidiFile = function(onsuccess, onprogress, onerror) {
 			onsuccess: onsuccess,
 			onprogress: onprogress,
 			onerror: onerror,
-			// soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/"
-			soundfontUrl: "external/soundfont"
+			soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/"
+			// soundfontUrl: "external/soundfont"
 		});
 	} catch(event) {
 		onerror && onerror(event);

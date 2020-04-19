@@ -227,7 +227,7 @@ class Renderer {
             }
 
             if (twoSided) {
-                console.log(sideDef)
+                // console.log(sideDef)
                 let otherCeilHeight = otherSector.ceilingHeight
                 let otherFloorHeight = otherSector.floorHeight
                 if (ceilHeight > otherCeilHeight && sideDef.upperTexture != null) {
