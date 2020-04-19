@@ -2,14 +2,16 @@ class DoomGame {
     readonly wad: WAD
     readonly colorMaps: DoomColorMap[];
     readonly colorPalettes: DoomPalette[];
+    readonly patches: Map<string, DoomPatch>;
     readonly maps: DoomMap[]
 
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], maps: DoomMap[]) {
+    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: Map<string, DoomPatch>, maps: DoomMap[]) {
         this.wad = wad
         this.colorMaps = colorMap
         this.colorPalettes = colorPalette
+        this.patches = patches
         this.maps = maps
         this.mapLookup = new Map<DoomMapName, DoomMap>()
         for (let map of maps) {
@@ -110,9 +112,10 @@ class DoomGame {
     static parse(wad: WAD): DoomGame {
         let colorMap = DoomGame.parseLumpAs(wad, "COLORMAP", parsingAll(DoomColorMap.MapSize, DoomColorMap.parse))
         let colorPalette = DoomGame.parseLumpAs(wad, "PLAYPAL", parsingAll(DoomPalette.PaletteSize, DoomPalette.parse))
+        let patches = DoomGame.parsePatches(wad)
         let maps = DoomGame.parseMaps(wad)
 
-        return new DoomGame(wad, colorMap, colorPalette, maps)
+        return new DoomGame(wad, colorMap, colorPalette, patches, maps)
     }
 }
 
@@ -570,8 +573,69 @@ class DoomPalette {
 }
 
 class DoomPatch {
-    // TODO implement me
+    readonly picture: DoomPicture
+
+    constructor(picture: DoomPicture) {
+        this.picture = picture;
+    }
+
     static parse(buf: Uint8Array): DoomPatch {
-        return new DoomPatch()
+        return new DoomPatch(DoomPicture.parse(buf))
+    }
+}
+
+class DoomPicture {
+
+    readonly width: number
+    readonly height: number
+    readonly offsetX: number
+    readonly offsetY: number
+    readonly pixels: number[]
+
+    constructor(width: number, height: number, offsetX: number, offsetY: number, pixels: number[]) {
+        this.width = width;
+        this.height = height;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+        this.pixels = pixels;
+    }
+
+    // For format description, check CHAPTER [5-1] in dmspec16.txt
+    static parse(buf: Uint8Array): DoomPicture {
+        let width = readU16LE(buf, 0)
+        let height = readU16LE(buf, 2)
+        let offsetX = readU16LE(buf, 4)
+        let offsetY = readU16LE(buf, 6)
+
+        let pixelData = new Array(width * height)
+        pixelData.fill(-1, 0, pixelData.length)
+
+        let columnPointers = [];
+        for (let x = 0; x < width; ++x) {
+            columnPointers[x] = readU32LE(buf, 8 + (x * 4));
+        }
+
+        for (let x = 0; x < width; ++x) {
+
+            let columnOffset = columnPointers[x]
+
+            while (true) {
+                let heightOffset = buf[columnOffset++]
+                if (heightOffset === 0xFF) {
+                    break
+                }
+                let pixelCount = buf[columnOffset++]
+
+                columnOffset++ // unused byte
+
+                for (let y = 0; y < pixelCount; ++y) {
+                    pixelData[((heightOffset + y) * width) + x] = buf[columnOffset++]
+                }
+
+                columnOffset++ // unused byte
+            }
+        }
+
+        return new DoomPicture(width, height, offsetX, offsetY, pixelData)
     }
 }

@@ -74,20 +74,21 @@ class AudioManager {
         }
         let music = game.doomGame.getMusic("D_E1M1")
         let midiBinary = mus2midi(music.data.buffer)
-        let decoded = new Uint8Array(midiBinary)     .reduce((data, byte) => data + String.fromCharCode(byte), '');
-        let encoded = "base64," + btoa(decoded)
+        if (midiBinary !== false) {
+            let blobUrl = URL.createObjectURL(new Blob([new Uint8Array(midiBinary)], {type: "audio/midi"}))
 
-        console.log("Start Midi...")
-        // @ts-ignore
-        MIDI.Player.loadFile(encoded, () => {
-            // MIDI.Player.currentTime = MIDI.Player.ctx.currentTime
+            console.log("Start Midi...")
             // @ts-ignore
-            MIDI.Player.start(queue => {
-                // TODO music starts late
-                console.log(`Music loaded with ${queue.length} events`)
-            })
-        }, null, console.log);
-        this.playing = true;
+            MIDI.Player.loadFile(blobUrl, () => {
+                // MIDI.Player.currentTime = MIDI.Player.ctx.currentTime
+                // @ts-ignore
+                MIDI.Player.start(queue => {
+                    // TODO music starts late
+                    console.log(`Music loaded with ${queue.length} events`)
+                })
+            }, null, console.log);
+            this.playing = true;
+        }
     }
 
     private getMusic() {
