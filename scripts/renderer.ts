@@ -298,8 +298,6 @@ class Renderer {
         const aspect = this.canvas.clientWidth / this.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.camera.rotate(0, 0, 0)
-
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -321,7 +319,7 @@ class Renderer {
         gl.useProgram(this.shaders[0].program)
 
         gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, mat4.identity)
-        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.camera.getMatrix())
+        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.camera.getTransformation())
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
 
         gl.activeTexture(gl.TEXTURE0)

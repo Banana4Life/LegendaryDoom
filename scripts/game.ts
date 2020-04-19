@@ -4,7 +4,7 @@ class Game {
     audio: AudioManager
     doomGame: DoomGame
     paused: boolean
-    private cameraTransform: Transform
+    private readonly cameraTransform: Transform
 
 
     constructor(gameData: DoomGame) {
@@ -60,8 +60,8 @@ class Game {
         this.controls.keys.MUTE_SOUND.addCallback( () => this.audio.toggleSounds())
 
         let playerThing = this.doomGame.maps[0].things[0]
-        this.cameraTransform.setTranslation(-playerThing.y, -41, -playerThing.x)
-        this.cameraTransform.setRotation(0, deg2rad(playerThing.angle), 0)
+        this.cameraTransform.setPosition(-playerThing.y, -41, -playerThing.x)
+        this.cameraTransform.setEulerAngles(0, deg2rad(playerThing.angle), 0)
 
         return this.renderer.initRenderer()
             .then(this.startLoop.bind(this))
@@ -99,7 +99,7 @@ class Game {
         let [dyaw, dpitch] = this.controls.getMouseChange()
 
         this.cameraTransform.translateForward(dx * dt, dy * dt, dz * dt)
-        this.cameraTransform.rotate(deg2rad(dpitch) * dt, deg2rad(dyaw) * dt, 0)
+        this.cameraTransform.rotateByEulerAngles(deg2rad(dpitch) * dt, deg2rad(dyaw) * dt, 0)
 
         // TODO actual game logic
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
