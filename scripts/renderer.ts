@@ -109,16 +109,11 @@ class Renderer {
     camera
     triangleCount
 
+    mapLoaded = false
+
     readonly fov = 90 * Math.PI / 180
     readonly near = 0.1
-    readonly far = 1000
-
-    readonly textureCoords = [
-        [0  ,0,  0  ,1,  .25,0,  .25,1],
-        [.25,0,  .25,1,  .5 ,0,  .5 ,1],
-        [.5 ,0,  .5 ,1,  .75,0,  .75,1],
-        [.75,0,  .75,1,  1  ,0,  1  ,1]
-    ]
+    readonly far = 100000
 
     initRenderer() {
         this.canvas = document.querySelector("canvas")
@@ -137,68 +132,17 @@ class Renderer {
         gl.depthFunc(gl.LEQUAL)
 
         let shaders = [
-            loadShader(gl, "shaders/simple", ["vertexPosition", "textureCoord"],
+            loadShader(gl, "shaders/simple",
+                ["vertexPosition", "textureCoord", "textureBoundary", "textureTiling"],
                 ["modelMatrix", "viewMatrix", "projectionMatrix", "sampler"])
         ]
 
-        const vertices = [
-            -1,  1, 2,
-            -1, -1, 2,
-            1,  1, 0,
-            1, -1, 0,
-
-             1,  1, 0,
-             1, -1, 0,
-             3,  1, 1,
-             3, -1, 1,
-
-            -1, -1, 2,
-             1, -1, 0,
-             1, -1, 3,
-             3, -1, 1
-        ]
-
-        const vertexBuffer = gl.createBuffer()
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
-
-        const triangles = [
-            0, 1, 2,    1, 2, 3,
-            4, 5, 6,    5, 6, 7,
-            8, 9,10,    9,10,11
-        ]
-
-        const triangleBuffer = gl.createBuffer()
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffer)
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangles), gl.STATIC_DRAW)
-
-        this.triangleCount = 18
-
-        const textureCoords = [
-            0  , 0,
-            0  , 1,
-            .25, 0,
-            .25, 1,
-
-            .25, 0,
-            .25, 1,
-            .5 , 0,
-            .5 , 1,
-
-            .5 , 0,
-            .5 , 1,
-            .75, 0,
-            .75, 1
-        ]
-
-        const textureCoordBuffer = gl.createBuffer()
-        gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW)
-
         this.buffers = {
-                vertices: vertexBuffer,
-                triangles: triangleBuffer,
-                textureCoords: textureCoordBuffer
+            vertices: gl.createBuffer(),
+            triangles: gl.createBuffer(),
+            textureCoords: gl.createBuffer(),
+            textureBoundaries: gl.createBuffer(),
+            textureTiling: gl.createBuffer()
         }
 
         this.textures = {
@@ -217,6 +161,8 @@ class Renderer {
         let vertices = []
         let triangles = []
         let textureCoords = []
+        let textureBoundaries = []
+        let textureTiling = []
         let ti = 0
 
         for (let sectorIndex = 0; sectorIndex < map.sectors.length; sectorIndex++) {
@@ -251,6 +197,8 @@ class Renderer {
                 sector.vertices[lineDef.endVertexIndex] = map.vertexes[lineDef.endVertexIndex]
             }
 
+            console.log(sector)
+
             // add sector to buffers
             let floorHeight = sector.sector.floorHeight
             let ceilHeight = sector.sector.ceilingHeight
@@ -276,33 +224,59 @@ class Renderer {
                 vertices = vertices.concat([endVertex[0], ceilHeight, endVertex[1]])      // top-right
                 vertices = vertices.concat([endVertex[0], floorHeight, endVertex[1]])     // bottom-right
 
-                textureCoords = textureCoords.concat(this.textureCoords[ti % 4])
-                ti++
-
                 let triangleOffsets = [0, 1, 2, 1, 2, 3]
                 for (let i = 0; i < triangleOffsets.length; i++) {
                     let triangleOffset = triangleOffsets[i]
                     triangles.push(vertexCount + triangleOffset)
                 }
+
+                let textureCoordLookup = [
+                    [0  ,0,  0  ,1,  .25,0,  .25,1],
+                    [.25,0,  .25,1,  .5 ,0,  .5 ,1],
+                    [.5 ,0,  .5 ,1,  .75,0,  .75,1],
+                    [.75,0,  .75,1,  1  ,0,  1  ,1]
+                ]
+                let textureBoundaryLookup = [
+                    [0  , 0, .25, 1],
+                    [.25, 0, .25, 1],
+                    [.5 , 0, .25, 1],
+                    [.75, 0, .25, 1]
+                ]
+
+                textureCoords = textureCoords.concat(textureCoordLookup[ti % 4])
+                for (let v = 0; v < 4; v++) {
+                    textureBoundaries = textureBoundaries.concat(textureBoundaryLookup[ti % 4])
+                    textureTiling = textureTiling.concat([2, 1])
+                }
+                ti++
             }
         }
 
         this.triangleCount = triangles.length
 
+        function fill(buffer, data) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
+        }
+
         let gl = this.webgl
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertices)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.textureCoords)
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW)
+        fill(this.buffers.vertices, vertices)
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.triangles)
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangles), gl.STATIC_DRAW)
 
+        fill(this.buffers.textureCoords, textureCoords)
+        fill(this.buffers.textureBoundaries, textureBoundaries)
+        fill(this.buffers.textureTiling, textureTiling)
+
         let x = map.things[0].x
         let y = map.things[0].y
-        this.camera.setTranslation(-x, -41, -y)
+        //this.camera.setTranslation(-x, -41, -y)
+        this.camera.setTranslation(-x, -200, -y)
+        this.camera.setRotation(0, deg2rad(90), 0)
+
+        this.mapLoaded = true
     }
 
     render(dt) {
@@ -311,22 +285,25 @@ class Renderer {
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.camera.rotate(0, deg2rad(1), 0)
-        //this.camera.translate(0, 0, 1)
+        this.camera.translate(0, 0, 1)
 
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.vertices)
-        gl.vertexAttribPointer(this.shaders[0].attribute["vertexPosition"], 3, gl.FLOAT, false, 0, 0)
-        gl.enableVertexAttribArray(this.shaders[0].attribute["vertexPosition"])
+        function setupAttrib(attribute, buffer, size) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+            gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 0, 0)
+            gl.enableVertexAttribArray(attribute)
+        }
+
+        setupAttrib(this.shaders[0].attribute["vertexPosition"], this.buffers.vertices, 3)
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.triangles)
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.textureCoords)
-        gl.vertexAttribPointer(this.shaders[0].attribute["textureCoord"], 2, gl.FLOAT, false, 0, 0)
-        gl.enableVertexAttribArray(this.shaders[0].attribute["textureCoord"])
+        setupAttrib(this.shaders[0].attribute["textureCoord"], this.buffers.textureCoords, 2)
+        setupAttrib(this.shaders[0].attribute["textureBoundary"], this.buffers.textureBoundaries, 4)
+        setupAttrib(this.shaders[0].attribute["textureTiling"], this.buffers.textureTiling, 2)
 
         gl.useProgram(this.shaders[0].program)
 
@@ -338,7 +315,9 @@ class Renderer {
         gl.bindTexture(gl.TEXTURE_2D, this.textures.atlas)
         gl.uniform1i(this.shaders[0].uniform["sampler"], 0)
 
-        gl.drawElements(gl.TRIANGLES, this.triangleCount, gl.UNSIGNED_SHORT, 0)
+        if (this.mapLoaded) {
+            gl.drawElements(gl.TRIANGLES, this.triangleCount, gl.UNSIGNED_SHORT, 0)
+        }
     }
 }
 
