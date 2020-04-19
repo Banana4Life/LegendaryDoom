@@ -14,23 +14,13 @@ function readString(encoding: string): StringReader {
 
 const readASCIIString = readString("ASCII")
 
-function unsignedToSigned(bits: number): (n: number) => number {
-    let shift = bits - 1
-    return n => {
-        let sign = n >> shift
-        if (sign == 0) {
-            return n
-        } else {
-            return -1 * (n & ~(1 << shift))
-        }
-    }
-}
-
-const u16ToI16 = unsignedToSigned(16)
-const u32ToI32 = unsignedToSigned(32)
-
 function readI16LE(buf: Uint8Array, at: number): number {
-    return u16ToI16(readU16LE(buf, at))
+    let n = readU16LE(buf, at)
+    if ((n >> 15) == 0) {
+        return n
+    } else {
+        return n | 0xFFFF0000
+    }
 }
 
 function readU16LE(buf: Uint8Array, at: number): number {
