@@ -1,17 +1,19 @@
 class DoomGame {
     readonly wad: WAD
-    readonly colorMaps: DoomColorMap[];
-    readonly colorPalettes: DoomPalette[];
-    readonly patches: Map<string, DoomPatch>;
+    readonly colorMaps: DoomColorMap[]
+    readonly colorPalettes: DoomPalette[]
+    readonly patches: Map<string, DoomPatch>
+    readonly flats: DoomFlatFolder
     readonly maps: DoomMap[]
 
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: Map<string, DoomPatch>, maps: DoomMap[]) {
+    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: Map<string, DoomPatch>, flats: DoomFlatFolder, maps: DoomMap[]) {
         this.wad = wad
         this.colorMaps = colorMap
         this.colorPalettes = colorPalette
         this.patches = patches
+        this.flats = flats
         this.maps = maps
         this.mapLookup = new Map<DoomMapName, DoomMap>()
         for (let map of maps) {
@@ -31,15 +33,23 @@ class DoomGame {
         return DoomGame.parseLumpAs(this.wad, name, DoomMusic.parse)
     }
 
-    private static findLump(dict: WADDictionary, name: string): WADLump | null {
+    static findLumpIndex(dict: WADDictionary, name: string): number {
         let upper = name.toUpperCase()
         for (let i = dict.length - 1; i >= 0; --i) {
             let lump = dict[i]
             if (lump.name === upper) {
-                return lump
+                return i;
             }
         }
-        return null
+        return -1
+    }
+
+    static findLump(dict: WADDictionary, name: string): WADLump | null {
+        let index = DoomGame.findLumpIndex(dict, name)
+        if (index === -1) {
+            return null
+        }
+        return dict[index]
     }
 
     private static parseLumpAs<T>(wad: WAD, name: string, parser: (buf: Uint8Array) => T): T | null {
@@ -62,7 +72,7 @@ class DoomGame {
         for (let i = 0; i < patchCount; ++i) {
             let patchName = readASCIIString(pnamesLump.data, 4 + (i * WADLump.NameLength), WADLump.NameLength)
             let lump = DoomGame.findLump(wad.dictionary, patchName)
-            let patch = DoomPatch.parse(lump.data)
+            let patch = DoomPatch.parse(lump.name, lump.data)
             patches.set(patchName, patch)
         }
 
@@ -113,9 +123,10 @@ class DoomGame {
         let colorMap = DoomGame.parseLumpAs(wad, "COLORMAP", parsingAll(DoomColorMap.MapSize, DoomColorMap.parse))
         let colorPalette = DoomGame.parseLumpAs(wad, "PLAYPAL", parsingAll(DoomPalette.PaletteSize, DoomPalette.parse))
         let patches = DoomGame.parsePatches(wad)
+        let flats = DoomFlatFolder.parse(wad.dictionary)
         let maps = DoomGame.parseMaps(wad)
 
-        return new DoomGame(wad, colorMap, colorPalette, patches, maps)
+        return new DoomGame(wad, colorMap, colorPalette, patches, flats, maps)
     }
 }
 
@@ -579,36 +590,41 @@ class DoomPatch {
         this.picture = picture;
     }
 
-    static parse(buf: Uint8Array): DoomPatch {
-        return new DoomPatch(DoomPicture.parse(buf))
+    static parse(name: string, buf: Uint8Array): DoomPatch {
+        return new DoomPatch(DoomPicture.fromPatch(name, buf))
     }
 }
 
+type DoomPixelData = number[] | Uint8Array
 class DoomPicture {
+    static readonly FlatSize = 64
+    static readonly TransparencyValue = -1
 
+    readonly name: string
     readonly width: number
     readonly height: number
     readonly offsetX: number
     readonly offsetY: number
-    readonly pixels: number[]
+    readonly pixels: DoomPixelData
 
-    constructor(width: number, height: number, offsetX: number, offsetY: number, pixels: number[]) {
-        this.width = width;
-        this.height = height;
-        this.offsetX = offsetX;
-        this.offsetY = offsetY;
-        this.pixels = pixels;
+    constructor(name: string, width: number, height: number, offsetX: number, offsetY: number, pixels: DoomPixelData) {
+        this.name = name
+        this.width = width
+        this.height = height
+        this.offsetX = offsetX
+        this.offsetY = offsetY
+        this.pixels = pixels
     }
 
     // For format description, check CHAPTER [5-1] in dmspec16.txt
-    static parse(buf: Uint8Array): DoomPicture {
+    static fromPatch(name: string, buf: Uint8Array): DoomPicture {
         let width = readU16LE(buf, 0)
         let height = readU16LE(buf, 2)
         let offsetX = readU16LE(buf, 4)
         let offsetY = readU16LE(buf, 6)
 
         let pixelData = new Array(width * height)
-        pixelData.fill(-1, 0, pixelData.length)
+        pixelData.fill(DoomPicture.TransparencyValue, 0, pixelData.length)
 
         let columnPointers = [];
         for (let x = 0; x < width; ++x) {
@@ -636,6 +652,94 @@ class DoomPicture {
             }
         }
 
-        return new DoomPicture(width, height, offsetX, offsetY, pixelData)
+        return new DoomPicture(name, width, height, offsetX, offsetY, pixelData)
+    }
+
+    static fromFlat(name: string, buf: Uint8Array): DoomPicture {
+        return new DoomPicture(name, DoomPicture.FlatSize, DoomPicture.FlatSize, 0, 0, buf)
+    }
+}
+
+type DoomFlatTree = DoomFlatFolder | DoomPicture
+class DoomFlatFolder {
+    static readonly RootName = "F"
+    static readonly RootLumpName = `${DoomFlatFolder.RootName}_START`
+
+    static readonly FlatFolderStartPattern = /(F\d*)_START/
+    static readonly FlatFolderEndPattern = /(F\d*)_END/
+
+    readonly name: string
+    readonly children: DoomFlatTree[]
+
+    private readonly childLookup: Map<string, DoomFlatTree>
+    private readonly pictureLookup: Map<string, DoomPicture>
+    private readonly subFolders: DoomFlatFolder[]
+
+    constructor(name: string, children: DoomFlatTree[]) {
+        this.name = name
+        this.children = children
+        this.childLookup = new Map<string, DoomFlatTree>()
+        this.pictureLookup = new Map<string, DoomPicture>()
+        this.subFolders = []
+        for (let child of children) {
+            this.childLookup.set(child.name, child)
+            if (child instanceof DoomPicture) {
+                this.pictureLookup.set(child.name, child)
+            } else {
+                this.subFolders.push(child)
+            }
+        }
+    }
+
+    getChild(name: string): DoomFlatTree | undefined {
+        return this.childLookup.get(name)
+    }
+
+    getPicture(name: string, recurse: boolean = false): DoomPicture | undefined {
+        let picture = this.pictureLookup.get(name)
+        if (picture === undefined && recurse) {
+            for (let folder of this.subFolders) {
+                picture = folder.getPicture(name, recurse)
+                if (picture !== undefined) {
+                    return picture
+                }
+            }
+        }
+        return picture
+    }
+
+    static parse(dict: WADDictionary): DoomFlatFolder {
+
+        function parseTree(dict: WADDictionary, name: string, lumpIndex: number): [number, DoomFlatFolder] {
+            let children: DoomFlatTree[] = []
+            while (lumpIndex < dict.length) {
+                let lump = dict[lumpIndex]
+                let lumpName = lump.name
+
+                let folderStartMatch = DoomFlatFolder.FlatFolderStartPattern.exec(lumpName)
+                let folderEndMatch = DoomFlatFolder.FlatFolderEndPattern.exec(lumpName)
+                if (folderStartMatch !== null) {
+                    let [, folderStartName] = folderStartMatch
+                    let [newLumpIndex, folder] = parseTree(dict, folderStartName, lumpIndex + 1)
+                    children.push(folder)
+                    lumpIndex = newLumpIndex
+                } else if (folderEndMatch !== null) {
+                    let [, folderEndName] = folderEndMatch
+                    if (name != folderEndName) {
+                        throw `Folder end (${folderEndName}) mismatched folder start (${name})!`
+                    }
+                    return [lumpIndex + 1, new DoomFlatFolder(name, children)]
+                } else {
+                    children.push(DoomPicture.fromFlat(lumpName, dict[lumpIndex].data))
+                    lumpIndex++
+                }
+            }
+            return [lumpIndex, new DoomFlatFolder(name, children)]
+        }
+
+        let lumpIndex = DoomGame.findLumpIndex(dict, DoomFlatFolder.RootLumpName)
+
+        let [, folder] = parseTree(dict, DoomFlatFolder.RootName, lumpIndex + 1)
+        return folder
     }
 }
