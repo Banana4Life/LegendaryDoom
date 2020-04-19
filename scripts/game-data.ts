@@ -661,6 +661,7 @@ class DoomFlatFolder {
 
     private readonly childLookup: Map<string, DoomFlatTree>
     private readonly pictureLookup: Map<string, DoomPicture>
+    private readonly pictureCount: number
     private readonly subFolders: DoomFlatFolder[]
 
     constructor(name: string, children: DoomFlatTree[]) {
@@ -669,14 +670,42 @@ class DoomFlatFolder {
         this.childLookup = new Map<string, DoomFlatTree>()
         this.pictureLookup = new Map<string, DoomPicture>()
         this.subFolders = []
+        this.pictureCount = 0
         for (let child of children) {
             this.childLookup.set(child.name, child)
             if (child instanceof DoomPicture) {
                 this.pictureLookup.set(child.name, child)
+                this.pictureCount++
             } else {
                 this.subFolders.push(child)
             }
         }
+    }
+
+    getSize(recurse: boolean = false): number {
+        if (recurse) {
+            return this.children.map(child => {
+                if (child instanceof DoomFlatFolder) {
+                    return child.getSize(recurse)
+                } else {
+                    return 1
+                }
+            }).reduce((a, b) => a + b)
+        }
+        return this.children.length
+    }
+
+    getPictureCount(recurse: boolean = false): number {
+        if (recurse) {
+            return this.children.map(child => {
+                if (child instanceof DoomFlatFolder) {
+                    return child.getPictureCount(recurse)
+                } else {
+                    return 1
+                }
+            }).reduce((a, b) => a + b)
+        }
+        return this.pictureCount
     }
 
     getChild(name: string): DoomFlatTree | undefined {
