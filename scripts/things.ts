@@ -43,6 +43,12 @@ class Transform {
         this.setTranslation(this.transX + x, this.transY + y, this.transZ + z)
     }
 
+    translateForward(x, y, z) {
+        let rotation = mat4.rotation(this.quaternion())
+        let [x2, y2, z2, ] = mat4.multiplyV4(rotation, [x, y, z, 0])
+        this.translate(x2, y2, z2)
+    }
+
     setRotation(roll, pitch = 0, yaw = 0) {
         if (Array.isArray(roll)) {
             [roll, pitch, yaw] = roll

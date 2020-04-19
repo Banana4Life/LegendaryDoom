@@ -3,15 +3,23 @@ enum Sound {
     PISTOL = "WAD:PISTOL",
     PLASMA = "WAD:PLASMA",
     START = "WAD:PSTART",
-    STOP = "WAD:PSTOP"
+    STOP = "WAD:PSTOP",
 }
 
 class AudioManager {
 
     audioContext: AudioContext
-    muted = false
-    audioCache = {}
-    t = 0
+    muted: boolean
+    audioCache
+    t: number
+    private gameData: DoomGame;
+
+    constructor(gameData: DoomGame) {
+        this.gameData = gameData;
+        this.muted = false
+        this.audioCache = {}
+        this.t = 0
+    }
 
     update(dt) {
         this.t += dt
@@ -29,7 +37,7 @@ class AudioManager {
             this.audioCache[sound] = this.newAudio(sound)
         }
         let audio = this.audioCache[sound]
-        if (audio instanceof WadAudio) {
+        if (audio instanceof WADAudio) {
             if (now || audio.paused || audio.ended) {
                 audio.play(this.t, this.audioContext, volume)
             }
@@ -43,24 +51,24 @@ class AudioManager {
         }
     }
 
-    newAudio(sound: Sound | string) {
+    newAudio(sound: Sound | string): WADAudio | HTMLAudioElement {
         if (sound.startsWith("WAD:")) {
-            if (game.doomGame) {
-                return this.getWadSound(sound.substr(4))
-            }
+            return this.getWadSound(sound.substr(4))
         } else {
             return new Audio(sound)
         }
     }
 
-    private getWadSound(name: string) {
-        let ds = game.doomGame.getSound(name)
+    private getWadSound(name: string): WADAudio {
+        let ds = this.gameData.getSound(name)
         let samples: Float32Array = new Float32Array(ds.samples.length)
-        ds.samples.forEach((value, idx, arr) => samples[idx] = ((value / 256) - 0.5) * 2)
+        for (let i = 0; i < ds.samples.length; ++i) {
+            samples[i] = ((ds.samples[i] / 256) - 0.5) * 2
+        }
         let audioBuffer = this.audioContext.createBuffer(1, samples.length, ds.sampleRate)
         audioBuffer.getChannelData(0).set(samples)
         // TODO cooldown values?
-        return new WadAudio(audioBuffer, 0.15)
+        return new WADAudio(audioBuffer, 0.15)
     }
 
     musicCache = {}
@@ -111,6 +119,7 @@ class AudioManager {
             MIDI.Player.setListener(data => {
                 if (data.now >= data.end) {
                     this.playing = undefined
+                    MIDI.Player.setListener(undefined);
                     console.log("MIDI Song finished")
                 }
             })
@@ -119,8 +128,9 @@ class AudioManager {
     }
 
     getMidiFromMus(name) {
-        let music = game.doomGame.getMusic(name)
+        let music = this.gameData.getMusic(name)
         let midiBinary = mus2midi(music.data.buffer)
+        // console.log(btoa(new Uint8Array(midiBinary).reduce((data, byte) => data + String.fromCharCode(byte), '')))
         if (midiBinary !== false) {
             return MidiFile(new Uint8Array(midiBinary))
         }
@@ -130,7 +140,7 @@ class AudioManager {
 
 }
 
-class WadAudio {
+class WADAudio {
     buffer: AudioBuffer
     ended = false
     paused = true
