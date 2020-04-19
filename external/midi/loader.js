@@ -42,8 +42,6 @@ MIDI.Player = MIDI.Player || {};
 		}
 
 		root.soundfontUrl = opts.soundfontUrl || root.soundfontUrl;
-		// LD46
-		root.soundfontUrl = "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/"
 
 		/// Detect the best type of audio to use
 		root.audioDetect(function(supports) {

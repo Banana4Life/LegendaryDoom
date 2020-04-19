@@ -9,7 +9,7 @@ function MidiFile(data) {
         return {
             'id': id,
             'length': length,
-            'data': stream.read(length)
+            'stream': new ByteStream(stream.readChunk(length))
         };
     }
 
@@ -194,13 +194,12 @@ function MidiFile(data) {
             }
         }
     }
-
-    stream = Stream(data);
+    stream = new ByteStream(data)
     var headerChunk = readChunk(stream);
     if (headerChunk.id != 'MThd' || headerChunk.length != 6) {
         throw "Bad .mid file - header not found";
     }
-    var headerStream = Stream(headerChunk.data);
+    var headerStream = headerChunk.stream
     var formatType = headerStream.readInt16();
     var trackCount = headerStream.readInt16();
     var timeDivision = headerStream.readInt16();
@@ -217,22 +216,43 @@ function MidiFile(data) {
         'ticksPerBeat': ticksPerBeat
     }
     var tracks = [];
+    var instruments = {};
+    var programs = {};
     for (var i = 0; i < header.trackCount; i++) {
         tracks[i] = [];
         var trackChunk = readChunk(stream);
         if (trackChunk.id != 'MTrk') {
             throw "Unexpected chunk - expected MTrk, got "+ trackChunk.id;
         }
-        var trackStream = Stream(trackChunk.data);
+        var trackStream = trackChunk.stream
         while (!trackStream.eof()) {
             var event = readEvent(trackStream);
             tracks[i].push(event);
-            //console.log(event);
+
+            var channel = event.channel;
+            switch(event.subtype) {
+                case 'controller':
+                    break;
+                case 'programChange':
+                    programs[channel] = event.programNumber;
+                    break;
+                case 'noteOn':
+                    var program = programs[channel];
+                    var gm = MIDI.GM.byId[isFinite(program) ? program : channel];
+                    instruments[gm.id] = true;
+                    break;
+            }
         }
+    }
+
+    var ret = [];
+    for (var key in instruments) {
+        ret.push(key);
     }
 
     return {
         'header': header,
-        'tracks': tracks
+        'tracks': tracks,
+        'instruments': ret
     }
 }
