@@ -68,8 +68,8 @@ class Transform {
     getMatrix() {
         if (this.dirty) {
             //this.matrix = mat4.multiply(mat4.rotation(this.roll, this.pitch, this.yaw),
-            this.matrix = mat4.multiply(mat4.rotation(this.quaternion()),
-                mat4.translation(this.transX, this.transY, this.transZ))
+            this.matrix = mat4.multiply(mat4.translation(this.transX, this.transY, this.transZ),
+                mat4.rotation(this.quaternion()))
             this.dirty = false
         }
         return this.matrix
