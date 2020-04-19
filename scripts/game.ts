@@ -45,12 +45,12 @@ class Game {
         this.controls.keys.SPACEBAR.addCallback(this.togglePause)
 
         // Load from external/doom.wad if possible
-        fetch("external/doom.wad").then(res => res.blob())
+        let dataPromise = fetch("external/doom.wad").then(res => res.blob())
             .then(blob => new File([blob], "doom.wad", {type: WAD.FileMimeType}))
             .then(file => parseWad(file))
             .then(wad => DoomGame.parse(wad)).then(doomGame => this.doomGame = doomGame)
-            .catch(any => undefined)
-        this.renderer.initRenderer().then(this.startLoop)
+        let rendererPromise = this.renderer.initRenderer()
+        Promise.all([dataPromise, rendererPromise]).then(this.startLoop)
     }
 
     private update0(dt) {
@@ -80,6 +80,8 @@ class Game {
     }
 
     private startLoop() {
+        game.renderer.loadMap(game.doomGame.maps[0])
+
         this.paused = false
         game.updateLoop(window, 0)
     }
