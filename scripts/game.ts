@@ -44,12 +44,14 @@ class Game {
     init() {
         this.controls.init(0, 0)
         this.controls.keys.SPACEBAR.addCallback(this.togglePause)
+        this.controls.keys.M.addCallback(() => this.audio.toggleMusic(true))
 
         // Load from external/doom.wad if possible
         let dataPromise = fetch("external/doom.wad").then(res => res.blob())
             .then(blob => new File([blob], "doom.wad", {type: WAD.FileMimeType}))
             .then(file => parseWad(file))
             .then(wad => DoomGame.parse(wad)).then(doomGame => this.doomGame = doomGame)
+            .then(() => this.audio.playMusic("D_INTER"))
         let rendererPromise = this.renderer.initRenderer()
         Promise.all([dataPromise, rendererPromise]).then(this.startLoop)
     }
@@ -67,7 +69,6 @@ class Game {
         }
         if (this.controls.buttonPressed(this.controls.buttons.MIDDLE)) {
             game.audio.playWadSound("OOF", 0.2)
-            this.audio.playMusic("D_E1M1")
         }
         if (this.controls.keyPressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!"

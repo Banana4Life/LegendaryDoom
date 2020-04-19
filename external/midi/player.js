@@ -60,6 +60,7 @@ midi.playMidiFile = function(midiFile, volume, onsuccess, onprogress) {
 		onsuccess: () => {
 			MIDI.setVolume(null, Math.trunc(volume * 127))
 			midi.start()
+			onsuccess()
 		},
 		onprogress: onprogress,
 		onerror: console.log,

@@ -8,6 +8,7 @@ class Controls {
 
         ESCAPE: new ConfigurableKey("Escape"),
         SPACEBAR: new ConfigurableKey("Space"),
+        M: new ConfigurableKey("KeyM"),
     }
 
     buttons = {

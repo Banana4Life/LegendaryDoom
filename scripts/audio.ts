@@ -9,7 +9,7 @@ enum Sound {
 class AudioManager {
 
     audioContext: AudioContext
-
+    muted = false
     audioCache = {}
     t = 0
 
@@ -65,27 +65,32 @@ class AudioManager {
 
     musicCache = {}
 
-    playing = false
+    playing
+    midiInitialized = false
     paused = false
 
-    toggleMusic() {
+    toggleMusic(mute = false) {
         if (this.playing) {
-            if (this.paused) {
+            if (mute) {
+                this.muted = !this.muted
+            }
+            this.paused = !this.paused
+            if (this.paused || this.muted) {
                 // @ts-ignore
-                MIDI.Player.resume();
-                console.log("resumed music")
-                this.paused = false
+                MIDI.Player.pause()
+                console.log("paused music")
             } else {
                 // @ts-ignore
-                MIDI.Player.pause();
-                console.log("paused music")
-                this.paused = true
+                MIDI.Player.resume()
+                console.log("resumed music")
             }
         }
     }
 
     playMusic(name, volume = 0.2) {
-        if (this.playing) {
+        console.log("Playing" + this.playing)
+        console.log("Play" + name)
+        if (this.playing && this.playing === name) {
             return
         }
 
@@ -95,16 +100,18 @@ class AudioManager {
 
         let midiFile = this.musicCache[name]
         if (midiFile) {
-            this.playing = true;
-            console.log("Start Midi...")
+            this.playing = name
+            this.midiInitialized = false
+            console.log("Start playing Midi " + name + " with " + midiFile['instruments'])
             // @ts-ignore
-            MIDI.Player.playMidiFile(midiFile, volume)
+            MIDI.Player.playMidiFile(midiFile, volume, () => {
+                this.midiInitialized = true
+            })
             // @ts-ignore
             MIDI.Player.setListener(data => {
                 if (data.now >= data.end) {
-                    this.playing = false;
-                    console.log("MIDI Song finished");
-                    this.playMusic(name)
+                    this.playing = undefined
+                    console.log("MIDI Song finished")
                 }
             })
 
@@ -117,8 +124,9 @@ class AudioManager {
         if (midiBinary !== false) {
             return MidiFile(new Uint8Array(midiBinary))
         }
-        return undefined;
+        return undefined
     }
+
 
 }
 
