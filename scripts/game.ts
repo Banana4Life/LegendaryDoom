@@ -98,7 +98,7 @@ class Game {
 
         let [dyaw, dpitch] = this.controls.getMouseChange()
 
-        this.cameraTransform.translateForward(dx * dt, dy * dt, dz * dt)
+        this.cameraTransform.moveForward(dx * dt, dy * dt, dz * dt)
         this.cameraTransform.rotateByEulerAngles(deg2rad(dpitch) * dt, deg2rad(dyaw) * dt, 0)
 
         // TODO actual game logic

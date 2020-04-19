@@ -1,4 +1,4 @@
-class Transform_ {
+class Transform {
     dirty
     matrix
     transX
@@ -9,19 +9,19 @@ class Transform_ {
     yaw
 
     constructor() {
-        this.setTranslation(0, 0, 0)
-        this.setRotation(0, 0, 0)
+        this.setPosition(0, 0, 0)
+        this.setEulerAngles(0, 0, 0)
 
         this.dirty = true
         this.matrix = mat4.identity
     }
 
     set(otherTransform) {
-        this.setTranslation(otherTransform.getTranslation())
-        this.setRotation(otherTransform.getRotation())
+        this.setPosition(otherTransform.getTranslation())
+        this.setEulerAngles(otherTransform.getRotation())
     }
 
-    setTranslation(x, y = 0, z = 0) {
+    setPosition(x, y = 0, z = 0) {
         if (Array.isArray(x)) {
             [x, y, z] = x
         }
@@ -32,24 +32,24 @@ class Transform_ {
         this.dirty = true
     }
 
-    getTranslation() {
+    getPosition() {
         return [this.transX, this.transY, this.transZ]
     }
 
-    translate(x, y = 0, z = 0) {
+    move(x, y = 0, z = 0) {
         if (Array.isArray(x)) {
             [x, y, z] = x
         }
-        this.setTranslation(this.transX + x, this.transY + y, this.transZ + z)
+        this.setPosition(this.transX + x, this.transY + y, this.transZ + z)
     }
 
-    translateForward(x, y, z) {
+    moveForward(x, y, z) {
         let rotation = mat4.rotation(this.quaternion())
         let [x2, y2, z2, ] = mat4.multiplyV4(rotation, [x, y, z, 0])
-        this.translate(x2, y2, z2)
+        this.move(x2, y2, z2)
     }
 
-    setRotation(roll, pitch = 0, yaw = 0) {
+    setEulerAngles(roll, pitch = 0, yaw = 0) {
         if (Array.isArray(roll)) {
             [roll, pitch, yaw] = roll
         }
@@ -60,18 +60,18 @@ class Transform_ {
         this.dirty = true
     }
 
-    getRotation() {
+    getEulerAngles() {
         return [this.roll, this.pitch, this.yaw]
     }
 
-    rotate(roll, pitch = 0, yaw = 0) {
+    rotateByEulerAngles(roll, pitch = 0, yaw = 0) {
         if (Array.isArray(roll)) {
             [roll, pitch, yaw] = roll
         }
-        this.setRotation(this.roll + roll, this.pitch + pitch, this.yaw + yaw)
+        this.setEulerAngles(this.roll + roll, this.pitch + pitch, this.yaw + yaw)
     }
 
-    getMatrix() {
+    getTransformation() {
         if (this.dirty) {
             //this.matrix = mat4.multiply(mat4.rotation(this.roll, this.pitch, this.yaw),
             this.matrix = mat4.multiply(mat4.translation(this.transX, this.transY, this.transZ),
@@ -98,7 +98,7 @@ class Transform_ {
     }
 }
 
-class Transform {
+class Transform_ {
     private dirty: boolean
     private transform: number[]
 
@@ -156,7 +156,7 @@ class Transform {
         this.setPosition(this.posX + x, this.posY + y, this.posZ + z);
     }
 
-    translateForward(x, y, z) {
+    moveForward(x, y, z) {
         let [x2, y2, z2, ] = mat4.multiplyV4(this.rotation, [x, y, z, 0])
         this.move(x2, y2, z2)
     }
