@@ -63,7 +63,9 @@ class Game {
         // TODO actual game logic
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
             // game.audio.play(Sound.PISTOL, 0.2)
-            game.audio.play(Sound.PLASMA, 0.2, true)
+            // game.audio.play(Sound.PLASMA, 0.2, true)
+            game.audio.playMusic()
+
         }
         if (this.controls.keyPressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!"

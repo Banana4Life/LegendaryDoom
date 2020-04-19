@@ -8,9 +8,12 @@
     "scripts/renderer.ts",
     "scripts/main.ts",
     "scripts/game.ts",
-    "scripts/audio.ts"
+    "scripts/audio.ts",
+    "external/soundfont-player.js",
+    "external/mus2midi.js"
   ],
   "compilerOptions": {
+    "allowJs": true,
     "inlineSourceMap": true,
     "target": "ES5",
     "lib": ["es6", "dom"]

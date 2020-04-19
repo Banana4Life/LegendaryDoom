@@ -63,6 +63,42 @@ class AudioManager {
         // TODO cooldown values?
         return new WadAudio(audioBuffer, 0.15)
     }
+
+    // @ts-ignore
+    soundfont = Soundfont
+
+    playing = false
+    playMusic() {
+        if (this.playing) {
+            return
+        }
+        this.playing = true;
+
+        let ac = new AudioContext()
+        let map = this.getMusic()
+        this.soundfont.instrument(ac, 'acoustic_grand_piano', {}).then(function (piano) {
+            piano.schedule(0, map)
+            piano.stop(map[map.length-1][0]+1)
+            // piano.on('stop', () => {
+            //     console.log("stopped")
+            //     this["playing"] = false
+            // });
+        })
+    }
+
+    private getMusic() {
+        let map = []
+        let delta = 0.05
+        map.push([delta*0, 'C4'])
+        map.push([delta*1, 'D4'])
+        map.push([delta*2, 'E4'])
+        map.push([delta*3, 'F4'])
+        map.push([delta*4, 'G4'])
+        map.push([delta*5, 'A4'])
+        map.push([delta*6, 'B4'])
+        map.push([delta*7, 'C5'])
+        return map
+    }
 }
 
 class WadAudio {
