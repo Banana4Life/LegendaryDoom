@@ -1,13 +1,15 @@
 class DoomGame {
     readonly wad: WAD
-    readonly colorMap: DoomColorMap;
+    readonly colorMaps: DoomColorMap[];
+    readonly colorPalettes: DoomPalette[];
     readonly maps: DoomMap[]
 
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(wad: WAD, colorMap: DoomColorMap, maps: DoomMap[]) {
+    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], maps: DoomMap[]) {
         this.wad = wad
-        this.colorMap = colorMap
+        this.colorMaps = colorMap
+        this.colorPalettes = colorPalette
         this.maps = maps
         this.mapLookup = new Map<DoomMapName, DoomMap>()
         for (let map of maps) {
@@ -20,37 +22,31 @@ class DoomGame {
     }
 
     getSound(name: string): DoomSound | null {
-        let lump = DoomGame.findLump(this.wad.dictionary, `DS${name}`.toUpperCase())
-        if (lump === null) {
-            return null
-        }
-        return DoomSound.parse(lump.data)
+        return DoomGame.parseLumpAs(this.wad, `DS${name}`, DoomSound.parse)
     }
 
     getMusic(name: string): DoomMusic | null {
-        let lump = DoomGame.findLump(this.wad.dictionary, name.toUpperCase())
-        if (lump === null) {
-            return null
-        }
-        return DoomMusic.parse(lump.data)
+        return DoomGame.parseLumpAs(this.wad, name, DoomMusic.parse)
     }
 
     private static findLump(dict: WADDictionary, name: string): WADLump | null {
-        for (let lump of dict) {
-            if (lump.name === name) {
+        let upper = name.toUpperCase()
+        for (let i = dict.length - 1; i >= 0; --i) {
+            let lump = dict[i]
+            if (lump.name === upper) {
                 return lump
             }
         }
         return null
     }
 
-    private static parseColorMap(wad: WAD): DoomColorMap {
-        let lump = DoomGame.findLump(wad.dictionary, "COLORMAP")
+    private static parseLumpAs<T>(wad: WAD, name: string, parser: (buf: Uint8Array) => T): T | null {
+        let lump = DoomGame.findLump(wad.dictionary, name)
         if (lump === null) {
             return null
         }
 
-        return DoomColorMap.parse(lump.data)
+        return parser(lump.data)
     }
 
     private static parsePatches(wad: WAD): Map<string, DoomPatch> {
@@ -112,10 +108,11 @@ class DoomGame {
     }
 
     static parse(wad: WAD): DoomGame {
-        let colorMap = DoomGame.parseColorMap(wad)
+        let colorMap = DoomGame.parseLumpAs(wad, "COLORMAP", parsingAll(DoomColorMap.MapSize, DoomColorMap.parse))
+        let colorPalette = DoomGame.parseLumpAs(wad, "PLAYPAL", parsingAll(DoomPalette.PaletteSize, DoomPalette.parse))
         let maps = DoomGame.parseMaps(wad)
 
-        return new DoomGame(wad, colorMap, maps)
+        return new DoomGame(wad, colorMap, colorPalette, maps)
     }
 }
 
@@ -533,29 +530,43 @@ class DoomMusic {
 }
 
 class DoomColorMap {
-    readonly maps: number[][]
+    static readonly MapSize = 256
 
-    constructor(maps: number[][]) {
-        this.maps = maps;
+    readonly map: number[]
+
+    constructor(map: number[]) {
+        this.map = map;
     }
 
-    static parse(buf: Uint8Array): DoomColorMap {
-        const mapSize = 256
-        let maps: number[][] = []
-        for (let i = 0; i < buf.length; i += mapSize) {
-            let map: number[] = new Array<number>(mapSize)
-            for (let j = 0; j < mapSize; ++j) {
-                map[j] = buf[i]
-            }
-            maps.push(map)
+    static parse(buf: Uint8Array, offset: number): DoomColorMap {
+        let map: number[] = new Array<number>(DoomColorMap.MapSize)
+        for (let i = 0; i < DoomColorMap.MapSize; ++i) {
+            map[i] = buf[offset + i]
         }
 
-        return new DoomColorMap(maps)
+        return new DoomColorMap(map)
     }
 }
 
 class DoomPalette {
-    // TODO implement and use me
+    static readonly Colors = 256
+    static readonly Channels = 3
+    static readonly PaletteSize = DoomPalette.Colors * DoomPalette.Channels
+
+    readonly colors: [number, number, number][]
+
+    constructor(colors: [number, number, number][]) {
+        this.colors = colors;
+    }
+
+    static parse(buf: Uint8Array, offset: number): DoomPalette {
+        let palette: [number, number, number][] = new Array<[number, number, number]>(DoomPalette.Colors)
+        for (let i = 0; i < DoomPalette.Colors; ++i) {
+            palette[i] = [buf[offset + i], buf[offset + i + 1], buf[offset + i + 2]]
+        }
+
+        return new DoomPalette(palette)
+    }
 }
 
 class DoomPatch {
