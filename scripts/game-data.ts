@@ -2,18 +2,20 @@ class DoomGame {
     readonly wad: WAD
     readonly colorMaps: DoomColorMap[]
     readonly colorPalettes: DoomPalette[]
-    readonly patches: Map<string, DoomPicture>
+    readonly patches: DoomPatchMap
     readonly flats: DoomFlatFolder
+    readonly textures: Map<string, DoomTexture>
     readonly maps: DoomMap[]
 
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: Map<string, DoomPicture>, flats: DoomFlatFolder, maps: DoomMap[]) {
+    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: DoomPatchMap, flats: DoomFlatFolder, textures: Map<string, DoomTexture>, maps: DoomMap[]) {
         this.wad = wad
         this.colorMaps = colorMap
         this.colorPalettes = colorPalette
         this.patches = patches
         this.flats = flats
+        this.textures = textures
         this.maps = maps
         this.mapLookup = new Map<DoomMapName, DoomMap>()
         for (let map of maps) {
@@ -61,22 +63,54 @@ class DoomGame {
         return parser(lump.data)
     }
 
-    private static parsePatches(wad: WAD): Map<string, DoomPicture> {
+    private static parsePatches(wad: WAD): DoomPatchMap {
         let pnamesLump = DoomGame.findLump(wad.dictionary, "PNAMES")
         if (pnamesLump === null) {
-            return new Map<string, DoomPicture>()
+            return new DoomPatchMap([])
         }
 
         let patchCount = readU32LE(pnamesLump.data, 0)
-        let patches = new Map<string, DoomPicture>()
+        let patches = new Array<DoomPicture>(patchCount)
         for (let i = 0; i < patchCount; ++i) {
             let patchName = readASCIIString(pnamesLump.data, 4 + (i * WADLump.NameLength), WADLump.NameLength)
             let lump = DoomGame.findLump(wad.dictionary, patchName)
-            let patch = DoomPicture.fromPatch(lump.name, lump.data)
-            patches.set(patchName, patch)
+            patches[i] = DoomPicture.fromPatch(lump.name, lump.data)
         }
 
-        return patches
+        return new DoomPatchMap(patches)
+    }
+
+    private static parseTextures(wad: WAD, patches: DoomPatchMap): Map<string, DoomTexture> {
+        function parseTextureLump(lump: WADLump): DoomTexture[] {
+            let buf = lump.data
+            let textureCount = readU32LE(buf, 0)
+            let textures: DoomTexture[] = []
+            for (let i = 0; i < textureCount; ++i) {
+                let textureOffset = readU32LE(buf, 4 + (4 * i))
+                textures.push(DoomTexture.parse(buf, textureOffset, patches))
+            }
+
+            return textures
+        }
+
+        let textureLumpIndex = 1
+        let allTextures: DoomTexture[] = []
+        while (true) {
+            let lump = DoomGame.findLump(wad.dictionary, `TEXTURE${textureLumpIndex}`)
+            if (lump === null) {
+                break;
+            }
+            let lumpTextures = parseTextureLump(lump);
+            allTextures.push(...lumpTextures)
+            textureLumpIndex++
+        }
+
+        let map = new Map<string, DoomTexture>()
+        for (let tex of allTextures) {
+            map.set(tex.name, tex)
+        }
+
+        return map
     }
 
     private static parseMaps(wad: WAD): DoomMap[] {
@@ -124,9 +158,10 @@ class DoomGame {
         let colorPalette = DoomGame.parseLumpAs(wad, "PLAYPAL", parsingAll(DoomPalette.PaletteSize, DoomPalette.parse))
         let patches = DoomGame.parsePatches(wad)
         let flats = DoomFlatFolder.parse(wad.dictionary)
+        let textures = DoomGame.parseTextures(wad, patches)
         let maps = DoomGame.parseMaps(wad)
 
-        return new DoomGame(wad, colorMap, colorPalette, patches, flats, maps)
+        return new DoomGame(wad, colorMap, colorPalette, patches, flats, textures, maps)
     }
 }
 
@@ -583,7 +618,28 @@ class DoomPalette {
     }
 }
 
-type DoomPixelData = number[] | Uint8Array
+class DoomPatchMap {
+    private readonly patches: DoomPicture[]
+    private readonly byNameLookup: Map<string, DoomPicture>
+
+    constructor(patches: DoomPicture[]) {
+        this.patches = patches
+        this.byNameLookup = new Map<string, DoomPicture>()
+        for (let patch of patches) {
+            this.byNameLookup.set(patch.name, patch)
+        }
+    }
+
+    getPatch(id: number | string): DoomPicture | undefined {
+        if (typeof id === 'string') {
+            return this.byNameLookup.get(id.toUpperCase())
+        } else {
+            return this.patches[id]
+        }
+    }
+}
+
+type DoomPixelData = ArrayLike<number>
 class DoomPicture {
     static readonly FlatSize = 64
     static readonly TransparencyValue = -1
@@ -758,5 +814,58 @@ class DoomFlatFolder {
 
         let [, folder] = parseTree(dict, DoomFlatFolder.RootName, lumpIndex + 1)
         return folder
+    }
+}
+
+class DoomTexture {
+    readonly name: string
+    readonly masked: boolean
+    readonly width: number
+    readonly height: number
+    readonly patches: DoomTexturePatch[]
+
+    constructor(name: string, masked: boolean, width: number, height: number, patches: DoomTexturePatch[]) {
+        this.name = name;
+        this.masked = masked;
+        this.width = width;
+        this.height = height;
+        this.patches = patches;
+    }
+
+    static parse(buf: Uint8Array, offset: number, patches: DoomPatchMap): DoomTexture {
+        let name = readASCIIString(buf, 0, WADLump.NameLength)
+        let masked = readU32LE(buf, 8) !== 0
+        let width = readU16LE(buf, 12)
+        let height = readU16LE(buf, 14)
+        // 4 bytes for "columndirectory", seems to be unused
+        let patchCount = readU16LE(buf, 20)
+        let texturePatches: DoomTexturePatch[] = new Array<DoomTexturePatch>(patchCount)
+        for (let i = 0; i < patchCount; ++i) {
+            texturePatches[i] = DoomTexturePatch.parse(buf, 22 + (DoomTexturePatch.StructSize * i), patches)
+        }
+
+        return new DoomTexture(name, masked, width, height, texturePatches)
+    }
+}
+
+class DoomTexturePatch {
+    static readonly StructSize = 10
+
+    readonly originX: number
+    readonly originY: number
+    readonly patch: DoomPicture
+
+    constructor(originX: number, originY: number, patch: DoomPicture) {
+        this.originX = originX;
+        this.originY = originY;
+        this.patch = patch;
+    }
+
+    static parse(buf: Uint8Array, offset: number, patches: DoomPatchMap): DoomTexturePatch {
+        let offsetX = readI16LE(buf, offset)
+        let offsetY = readI16LE(buf, offset + 2)
+        let patchIndex = readU16LE(buf, offset + 4)
+        // 2 more fields, which are not used/known: stepdir, colormap
+        return new DoomTexturePatch(offsetX, offsetY, patches.getPatch(patchIndex))
     }
 }
