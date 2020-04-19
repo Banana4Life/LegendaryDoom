@@ -9,7 +9,7 @@ enum Sound {
 class AudioManager {
 
     audioContext: AudioContext
-
+    muted = false
     audioCache = {}
     t = 0
 
@@ -65,10 +65,32 @@ class AudioManager {
 
     musicCache = {}
 
-    playing = false
-    playMusic(name) {
-        name = "D_E1M1"
+    playing
+    midiInitialized = false
+    paused = false
+
+    toggleMusic(mute = false) {
         if (this.playing) {
+            if (mute) {
+                this.muted = !this.muted
+            }
+            this.paused = !this.paused
+            if (this.paused || this.muted) {
+                // @ts-ignore
+                MIDI.Player.pause()
+                console.log("paused music")
+            } else {
+                // @ts-ignore
+                MIDI.Player.resume()
+                console.log("resumed music")
+            }
+        }
+    }
+
+    playMusic(name, volume = 0.2) {
+        console.log("Playing" + this.playing)
+        console.log("Play" + name)
+        if (this.playing && this.playing === name) {
             return
         }
 
@@ -78,17 +100,21 @@ class AudioManager {
 
         let midiFile = this.musicCache[name]
         if (midiFile) {
-            console.log("Start Midi...")
+            this.playing = name
+            this.midiInitialized = false
+            console.log("Start playing Midi " + name + " with " + midiFile['instruments'])
             // @ts-ignore
-            MIDI.Player.playMidiFile(midiFile)
+            MIDI.Player.playMidiFile(midiFile, volume, () => {
+                this.midiInitialized = true
+            })
             // @ts-ignore
             MIDI.Player.setListener(data => {
                 if (data.now >= data.end) {
-                    this.playing = false;
-                    console.log("MIDI Song finished");
+                    this.playing = undefined
+                    console.log("MIDI Song finished")
                 }
             })
-            this.playing = true;
+
         }
     }
 
@@ -98,8 +124,9 @@ class AudioManager {
         if (midiBinary !== false) {
             return MidiFile(new Uint8Array(midiBinary))
         }
-        return undefined;
+        return undefined
     }
+
 
 }
 

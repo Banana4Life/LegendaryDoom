@@ -50,17 +50,22 @@ midi.removeListener = function() {
 
 // helpers
 
-midi.playMidiFile = function(midiFile, onsuccess, onprogress) {
+midi.playMidiFile = function(midiFile, volume, onsuccess, onprogress) {
 	midi.stop()
 	midi.replayer = new Replayer(midiFile, midi.timeWarp, null, midi.BPM);
 	midi.data = midi.replayer.getData();
 	midi.endTime = getLength();
 	MIDI.loadPlugin({
 		instruments: midiFile['instruments'],
-		onsuccess: midi.start,
+		onsuccess: () => {
+			MIDI.setVolume(null, Math.trunc(volume * 127))
+			midi.start()
+			onsuccess()
+		},
 		onprogress: onprogress,
-		onerror: onerror,
-		soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/"
+		onerror: console.log,
+		soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/",
+		api: "webaudio"
 	});
 }
 

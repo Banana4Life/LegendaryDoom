@@ -30,6 +30,7 @@ document.querySelectorAll('.drop-target').forEach(elem => {
             parseWad(e.dataTransfer.files.item(0)).then(wad => {
                 console.log(wad.header.type, wad.header.lumpCount, wad.dictionary.length)
                 game.doomGame = DoomGame.parse(wad)
+                game.audio.playMusic("D_E1M1");
                 console.log(game.doomGame.maps.length)
             })
         }
