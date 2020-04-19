@@ -2,13 +2,13 @@ class DoomGame {
     readonly wad: WAD
     readonly colorMaps: DoomColorMap[]
     readonly colorPalettes: DoomPalette[]
-    readonly patches: Map<string, DoomPatch>
+    readonly patches: Map<string, DoomPicture>
     readonly flats: DoomFlatFolder
     readonly maps: DoomMap[]
 
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: Map<string, DoomPatch>, flats: DoomFlatFolder, maps: DoomMap[]) {
+    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: Map<string, DoomPicture>, flats: DoomFlatFolder, maps: DoomMap[]) {
         this.wad = wad
         this.colorMaps = colorMap
         this.colorPalettes = colorPalette
@@ -61,18 +61,18 @@ class DoomGame {
         return parser(lump.data)
     }
 
-    private static parsePatches(wad: WAD): Map<string, DoomPatch> {
+    private static parsePatches(wad: WAD): Map<string, DoomPicture> {
         let pnamesLump = DoomGame.findLump(wad.dictionary, "PNAMES")
         if (pnamesLump === null) {
-            return new Map<string, DoomPatch>()
+            return new Map<string, DoomPicture>()
         }
 
         let patchCount = readU32LE(pnamesLump.data, 0)
-        let patches = new Map<string, DoomPatch>()
+        let patches = new Map<string, DoomPicture>()
         for (let i = 0; i < patchCount; ++i) {
             let patchName = readASCIIString(pnamesLump.data, 4 + (i * WADLump.NameLength), WADLump.NameLength)
             let lump = DoomGame.findLump(wad.dictionary, patchName)
-            let patch = DoomPatch.parse(lump.name, lump.data)
+            let patch = DoomPicture.fromPatch(lump.name, lump.data)
             patches.set(patchName, patch)
         }
 
@@ -580,18 +580,6 @@ class DoomPalette {
         }
 
         return new DoomPalette(palette)
-    }
-}
-
-class DoomPatch {
-    readonly picture: DoomPicture
-
-    constructor(picture: DoomPicture) {
-        this.picture = picture;
-    }
-
-    static parse(name: string, buf: Uint8Array): DoomPatch {
-        return new DoomPatch(DoomPicture.fromPatch(name, buf))
     }
 }
 
