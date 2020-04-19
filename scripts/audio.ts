@@ -8,10 +8,15 @@ enum Sound {
 
 class AudioManager {
 
+    game: Game
     audioContext: AudioContext
     muted = false
     audioCache = {}
     t = 0
+
+    constructor(game: Game) {
+        this.game = game;
+    }
 
     update(dt) {
         this.t += dt
@@ -45,7 +50,7 @@ class AudioManager {
 
     newAudio(sound: Sound | string) {
         if (sound.startsWith("WAD:")) {
-            if (game.doomGame) {
+            if (this.game.doomGame) {
                 return this.getWadSound(sound.substr(4))
             }
         } else {
@@ -54,7 +59,7 @@ class AudioManager {
     }
 
     private getWadSound(name: string) {
-        let ds = game.doomGame.getSound(name)
+        let ds = this.game.doomGame.getSound(name)
         let samples: Float32Array = new Float32Array(ds.samples.length)
         ds.samples.forEach((value, idx, arr) => samples[idx] = ((value / 256) - 0.5) * 2)
         let audioBuffer = this.audioContext.createBuffer(1, samples.length, ds.sampleRate)
@@ -119,7 +124,7 @@ class AudioManager {
     }
 
     getMidiFromMus(name) {
-        let music = game.doomGame.getMusic(name)
+        let music = this.game.doomGame.getMusic(name)
         let midiBinary = mus2midi(music.data.buffer)
         if (midiBinary !== false) {
             return MidiFile(new Uint8Array(midiBinary))

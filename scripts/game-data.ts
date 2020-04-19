@@ -165,6 +165,8 @@ class DoomGame {
     }
 
     logStats() {
+        console.info(`WAD type: ${this.wad.header.type}`)
+        console.info(`Lump count: ${this.wad.dictionary.length}`)
         console.info(`Number of color maps loaded: ${this.colorMaps.length}`)
         console.info(`Number of color palettes loaded: ${this.colorPalettes.length}`)
         console.info(`Number of patches loaded: ${this.patches.getSize()}`)

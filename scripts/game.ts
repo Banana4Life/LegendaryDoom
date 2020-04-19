@@ -1,9 +1,18 @@
 class Game {
-    controls = new Controls()
-    renderer = new Renderer()
-    audio = new AudioManager()
+    controls: Controls
+    renderer: Renderer
+    audio: AudioManager
     doomGame: DoomGame
-    paused = false
+    paused: boolean
+
+
+    constructor(gameData: DoomGame) {
+        this.controls = new Controls()
+        this.renderer = new Renderer()
+        this.audio = new AudioManager(this)
+        this.doomGame = gameData
+        this.paused = false
+    }
 
     update(dt) {
         this.update0(dt)
@@ -12,52 +21,48 @@ class Game {
     }
 
     togglePause() {
-        game.audio.toggleMusic()
-        game.paused = !game.paused
-        console.log("Paused? " + game.paused)
+        this.audio.toggleMusic()
+        this.paused = !this.paused
+        console.log("Paused? " + this.paused)
         document.querySelectorAll(".paused").forEach(e => {
-            if (game.paused) {
+            if (this.paused) {
                 e.classList.add("is-paused")
-                game.audio.play(Sound.STOP)
+                this.audio.play(Sound.STOP)
             } else {
                 e.classList.remove("is-paused")
-                game.audio.play(Sound.START)
+                this.audio.play(Sound.START)
             }
         })
     }
 
     updateLoop(root, pt: number) {
+        let self = this
         root.requestAnimationFrame(t => {
             let dt = 0
-            if (!game.paused) {
+            if (!self.paused) {
                 if (pt !== 0) {
                     dt = (t - pt) / 1000
                 }
             }
-            if (game.update(dt) === false) {
+            if (self.update(dt) === false) {
                 return
             }
-            game.updateLoop(root, t)
+            self.updateLoop(root, t)
         })
     }
 
-    init() {
+    init(): Promise<void> {
         this.controls.init(0, 0)
         this.controls.keys.SPACEBAR.addCallback(this.togglePause)
         this.controls.keys.M.addCallback(() => this.audio.toggleMusic(true))
 
-        // Load from external/doom.wad if possible
-        let dataPromise = fetch("external/doom.wad").then(res => res.blob())
-            .then(blob => new File([blob], "doom.wad", {type: WAD.FileMimeType}))
-            .then(file => parseWad(file))
-            .then(wad => DoomGame.parse(wad)).then(doomGame => this.doomGame = doomGame)
-            .then(() => this.audio.playMusic("D_INTER"))
-        let rendererPromise = this.renderer.initRenderer()
-        Promise.all([dataPromise, rendererPromise]).then(this.startLoop)
+
+        return this.renderer.initRenderer()
+            .then(this.startLoop.bind(this))
     }
 
     private update0(dt) {
-        game.audio.update(dt)
+        this.audio.update(dt)
         if (this.paused) {
             return
         }
@@ -65,15 +70,15 @@ class Game {
         // TODO actual game logic
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
             // game.audio.play(Sound.PISTOL, 0.2)
-            game.audio.play(Sound.PLASMA, 0.2, true)
+            this.audio.play(Sound.PLASMA, 0.2, true)
         }
         if (this.controls.buttonPressed(this.controls.buttons.MIDDLE)) {
-            game.audio.playWadSound("OOF", 0.2)
+            this.audio.playWadSound("OOF", 0.2)
         }
         if (this.controls.keyPressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!"
             // game.audio.play(Sound.SHOT)
-            game.audio.playWadSound("PUNCH", 0.2)
+            this.audio.playWadSound("PUNCH", 0.2)
 
         } else {
             document.querySelector("h3").textContent = "DOOM awaits you!"
@@ -82,12 +87,10 @@ class Game {
     }
 
     private startLoop() {
-        game.renderer.loadMap(game.doomGame.maps[0])
+        this.renderer.loadMap(this.doomGame.maps[0])
 
         this.paused = false
-        game.updateLoop(window, 0)
+        this.updateLoop(window, 0)
     }
 
 }
-
-let game = new Game()
