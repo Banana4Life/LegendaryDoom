@@ -113,7 +113,7 @@ class DoomGame {
         return new DoomTextureMap(map)
     }
 
-    private static parseMaps(wad: WAD): DoomMap[] {
+    private static parseMaps(wad: WAD, textures: DoomTextureMap): DoomMap[] {
 
         let originalName = /^(?:E(\d+)M(\d+))$/
         let laterName = /^MAP(\d+)$/
@@ -143,7 +143,7 @@ class DoomGame {
             if (name === null) {
                 return findMaps(from + 1, maps)
             } else {
-                maps.push(DoomMap.parse(wad, name, from))
+                maps.push(DoomMap.parse(wad, name, from, textures))
                 return findMaps(from + 1, maps)
             }
         }
@@ -159,7 +159,7 @@ class DoomGame {
         let patches = DoomGame.parsePatches(wad)
         let flats = DoomFlatFolder.parse(wad.dictionary)
         let textures = DoomGame.parseTextures(wad, patches)
-        let maps = DoomGame.parseMaps(wad)
+        let maps = DoomGame.parseMaps(wad, textures)
 
         return new DoomGame(wad, colorMap, colorPalette, patches, flats, textures, maps)
     }
@@ -193,10 +193,10 @@ class DoomMap {
         this.blockMap = blockMap
     }
 
-    static parse(wad: WAD, name: DoomMapName, lumpOffset: number): DoomMap {
+    static parse(wad: WAD, name: DoomMapName, lumpOffset: number, textures: DoomTextureMap): DoomMap {
         let things = DoomMap.parseLump(wad, lumpOffset + 1, "THINGS", parsingAll(DoomThing.StructSize, DoomThing.parse))
         let lineDefs = DoomMap.parseLump(wad, lumpOffset + 2, "LINEDEFS", parsingAll(DoomLineDef.StructSize, DoomLineDef.parse))
-        let sideDefs = DoomMap.parseLump(wad, lumpOffset + 3, "SIDEDEFS", parsingAll(DoomSideDef.StructSize, DoomSideDef.parse))
+        let sideDefs = DoomMap.parseLump(wad, lumpOffset + 3, "SIDEDEFS", parsingAll(DoomSideDef.StructSize, (buf, i) => DoomSideDef.parse(buf, i, textures)))
         let vertexes = DoomMap.parseLump(wad, lumpOffset + 4, "VERTEXES", parsingAll(DoomVertexSize, parseDoomVertex))
         let segments = DoomMap.parseLump(wad, lumpOffset + 5, "SEGS", parsingAll(DoomSegment.StructSize, DoomSegment.parse))
         let subSectors = DoomMap.parseLump(wad, lumpOffset + 6, "SSECTORS", parsingAll(DoomSubSector.StructSize, DoomSubSector.parse))
@@ -285,13 +285,13 @@ class DoomLineDef {
 
     static parse(buf: Uint8Array, i: number): DoomLineDef {
         return new DoomLineDef(
-            readU16LE(buf, i),
-            readU16LE(buf, i + 2),
-            readU16LE(buf, i + 4),
-            readU16LE(buf, i + 6),
-            readU16LE(buf, i + 8),
-            readU16LE(buf, i + 10),
-            readU16LE(buf, i + 12)
+            readI16LE(buf, i),
+            readI16LE(buf, i + 2),
+            readI16LE(buf, i + 4),
+            readI16LE(buf, i + 6),
+            readI16LE(buf, i + 8),
+            readI16LE(buf, i + 10),
+            readI16LE(buf, i + 12)
         )
     }
 }
@@ -301,13 +301,13 @@ class DoomSideDef {
 
     readonly offsetX: number
     readonly offsetY: number
-    readonly upperTextureName: string
-    readonly lowerTextureName: string
-    readonly middleTextureName: string
+    readonly upperTextureName: DoomTexture | null
+    readonly lowerTextureName: DoomTexture | null
+    readonly middleTextureName: DoomTexture | null
     readonly sectorIndex: number
 
 
-    constructor(offsetX: number, offsetY: number, upperTextureName: string, lowerTextureName: string, middleTextureName: string, sectorIndex: number) {
+    constructor(offsetX: number, offsetY: number, upperTextureName: DoomTexture | null, lowerTextureName: DoomTexture | null, middleTextureName: DoomTexture | null, sectorIndex: number) {
         this.offsetX = offsetX
         this.offsetY = offsetY
         this.upperTextureName = upperTextureName
@@ -316,13 +316,13 @@ class DoomSideDef {
         this.sectorIndex = sectorIndex
     }
 
-    static parse(buf: Uint8Array, i: number): DoomSideDef {
+    static parse(buf: Uint8Array, i: number, textures: DoomTextureMap): DoomSideDef {
         return new DoomSideDef(
             readI16LE(buf, i),
             readI16LE(buf, i + 2),
-            readASCIIString(buf, i + 4, WADLump.NameLength),
-            readASCIIString(buf, i + 12, WADLump.NameLength),
-            readASCIIString(buf, i + 20, WADLump.NameLength),
+            textures.getTexture(readASCIIString(buf, i + 4, WADLump.NameLength)),
+            textures.getTexture(readASCIIString(buf, i + 12, WADLump.NameLength)),
+            textures.getTexture(readASCIIString(buf, i + 20, WADLump.NameLength)),
             readU16LE(buf, i + 28)
         )
     }
