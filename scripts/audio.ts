@@ -86,6 +86,7 @@ class AudioManager {
                 if (data.now >= data.end) {
                     this.playing = false;
                     console.log("MIDI Song finished");
+                    this.playMusic(name)
                 }
             })
             this.playing = true;

@@ -59,8 +59,9 @@ midi.playMidiFile = function(midiFile, onsuccess, onprogress) {
 		instruments: midiFile['instruments'],
 		onsuccess: midi.start,
 		onprogress: onprogress,
-		onerror: onerror,
-		soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/"
+		onerror: console.log,
+		soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/",
+		api: "webaudio"
 	});
 }
 
