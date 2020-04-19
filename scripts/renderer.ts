@@ -126,6 +126,7 @@ class Renderer {
         const rowHeight = 128
 
         let atlas = new Array(atlasWidth * atlasHeight)
+        let atlasBoundaryLookup = {}
 
         for (let i = 0; i < atlasWidth * atlasHeight; i++) {
             atlas[i] = 0
@@ -140,12 +141,15 @@ class Renderer {
                 atlasY += rowHeight
             }
 
+            atlasBoundaryLookup[name] = [atlasX / atlasWidth, atlasY / atlasHeight,
+                texture.width / atlasWidth, texture.height / atlasHeight]
+
             for (let x = 0; x < texture.width; x++) {
                 for (let y = 0; y < texture.height; y++) {
                     for (let p = 0; p < texture.patches.length; p++) {
                         let patch = texture.patches[p]
-                        let pX = x + patch.originX + patch.patch.offsetX - (patch.patch.width / 2 - 1)
-                        let pY = y + patch.originY + patch.patch.offsetY - (patch.patch.height - 5)
+                        let pX = x - patch.originX //+ patch.patch.offsetX - (patch.patch.width / 2 - 1)
+                        let pY = y - patch.originY //+ awpatch.patch.offsetY - (patch.patch.height - 5)
                         if (pX >= 0 && pX < patch.patch.width && pY >= 0 && pY < patch.patch.height) {
                             atlas[(atlasY + y) * atlasWidth + atlasX + x] =
                                 patch.patch.pixels[pY * patch.patch.width + pX]
@@ -171,24 +175,12 @@ class Renderer {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 
         this.textures = {
-            atlas: atlasTexture
+            atlas: atlasTexture,
+            atlasBoundaryLookup: atlasBoundaryLookup
         }
     }
 
     loadMap(map) {
-        let textureCoordLookup = [
-            [24 / 2048, 0, 24 / 2048, 96 / 2048, (24 + 128) / 2048, 0, (24 + 128) / 2048, 96 / 2048],
-            [.25, 0, .25, 1, .5, 0, .5, 1],
-            [.5, 0, .5, 1, .75, 0, .75, 1],
-            [.75, 0, .75, 1, 1, 0, 1, 1]
-        ]
-        let textureBoundaryLookup = [
-            [24 / 2048, 0, 128 / 2048, 96 / 2048],
-            [.25, 0, .25, 1],
-            [.5, 0, .25, 1],
-            [.75, 0, .25, 1]
-        ]
-
         let vertices = []
         let triangles = []
         let textureCoords = []
@@ -196,11 +188,11 @@ class Renderer {
         let textureTiling = []
         let ti = 0
 
-        function loadSideDef(sideDef, startVertex, endVertex, sector, twoSided, otherSector) {
+        function loadSideDef(sideDef, startVertex, endVertex, sector, twoSided, otherSector, textures) {
             let floorHeight = sector.floorHeight
             let ceilHeight = sector.ceilingHeight
 
-            function addQuad(left, right, top, bottom) {
+            function addQuad(left, right, top, bottom, textureName) {
                 let prevVertexCount = vertices.length / 3
 
                 vertices = vertices.concat([left[0], top, left[1]])
@@ -213,26 +205,36 @@ class Renderer {
                     triangles.push(prevVertexCount + triangleOffset)
                 }
 
-                textureCoords = textureCoords.concat(textureCoordLookup[ti % 4])
+                let textureBoundary = textures.atlasBoundaryLookup[textureName]
+                let bLeft = textureBoundary[0]
+                let bTop = textureBoundary[1]
+                let bWidth = textureBoundary[2]
+                let bHeight = textureBoundary[3]
+                textureCoords = textureCoords.concat([
+                    bLeft, bTop,
+                    bLeft, bTop + bHeight,
+                    bLeft + bWidth, bTop,
+                    bLeft + bWidth, bTop + bHeight
+                ])
                 for (let v = 0; v < 4; v++) {
-                    textureBoundaries = textureBoundaries.concat(textureBoundaryLookup[ti % 4])
+                    textureBoundaries = textureBoundaries.concat(textureBoundary)
                     textureTiling = textureTiling.concat([1, 1])
                 }
-                ti++
             }
 
             if (sideDef.middleTexture != null) {
-                addQuad(startVertex, endVertex, ceilHeight, floorHeight)
+                addQuad(startVertex, endVertex, ceilHeight, floorHeight, sideDef.middleTexture.name)
             }
 
             if (twoSided) {
+                console.log(sideDef)
                 let otherCeilHeight = otherSector.ceilingHeight
                 let otherFloorHeight = otherSector.floorHeight
-                if (ceilHeight > otherCeilHeight) {
-                    addQuad(startVertex, endVertex, ceilHeight, otherCeilHeight)
+                if (ceilHeight > otherCeilHeight && sideDef.upperTexture != null) {
+                    addQuad(startVertex, endVertex, ceilHeight, otherCeilHeight, sideDef.upperTexture.name)
                 }
-                if (floorHeight < otherFloorHeight) {
-                    addQuad(startVertex, endVertex, otherFloorHeight, floorHeight)
+                if (floorHeight < otherFloorHeight && sideDef.lowerTexture != null) {
+                    addQuad(startVertex, endVertex, otherFloorHeight, floorHeight, sideDef.lowerTexture.name)
                 }
             }
         }
@@ -262,10 +264,10 @@ class Renderer {
             }
 
             if (right) {
-                loadSideDef(rightSideDef, startVertex, endVertex, rightSector, twoSided, leftSector)
+                loadSideDef(rightSideDef, startVertex, endVertex, rightSector, twoSided, leftSector, this.textures)
             }
             if (left) {
-                loadSideDef(leftSideDef, endVertex, startVertex, leftSector, twoSided, rightSector)
+                loadSideDef(leftSideDef, endVertex, startVertex, leftSector, twoSided, rightSector, this.textures)
             }
         }
 
@@ -286,11 +288,6 @@ class Renderer {
         fill(this.buffers.textureCoords, textureCoords)
         fill(this.buffers.textureBoundaries, textureBoundaries)
         fill(this.buffers.textureTiling, textureTiling)
-
-        let x = map.things[0].x
-        let y = map.things[0].y
-        //this.camera.setTranslation(-x, -41, -y)
-        this.camera.setTranslation(-x, -400, -y + 200)
 
         this.mapLoaded = true
     }

@@ -121,7 +121,6 @@ class Game {
         this.renderer.loadTextures(this.doomGame.textures.textures)
         this.renderer.loadMap(this.doomGame.maps[0])
 
-
         this.paused = false
         this.updateLoop(window, 0)
     }
