@@ -204,11 +204,11 @@ class DoomThing {
 
     static parse(buf: Uint8Array, i: number): DoomThing {
         return new DoomThing(
-            readU16LE(buf, i),
-            readU16LE(buf, i + 2),
-            readU16LE(buf, i + 4),
-            readU16LE(buf, i + 6),
-            readU16LE(buf, i + 8)
+            readI16LE(buf, i),
+            readI16LE(buf, i + 2),
+            readI16LE(buf, i + 4),
+            readI16LE(buf, i + 6),
+            readI16LE(buf, i + 8)
         )
     }
 }
