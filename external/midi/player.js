@@ -40,7 +40,7 @@ midi.stop = function() {
 	midi.currentTime = 0;
 };
 
-midi.addListener = function(onsuccess) {
+midi.setListener = function(onsuccess) {
 	onMidiEvent = onsuccess;
 };
 
@@ -48,63 +48,21 @@ midi.removeListener = function() {
 	onMidiEvent = undefined;
 };
 
-midi.clearAnimation = function() {
-	if (midi.animationFrameId)  {
-		cancelAnimationFrame(midi.animationFrameId);
-	}
-};
-
-midi.setAnimation = function(callback) {
-	var currentTime = 0;
-	var tOurTime = 0;
-	var tTheirTime = 0;
-	//
-	midi.clearAnimation();
-	///
-	var frame = function() {
-		midi.animationFrameId = requestAnimationFrame(frame);
-		///
-		if (midi.endTime === 0) {
-			return;
-		}
-		if (midi.playing) {
-			currentTime = (tTheirTime === midi.currentTime) ? tOurTime - Date.now() : 0;
-			if (midi.currentTime === 0) {
-				currentTime = 0;
-			} else {
-				currentTime = midi.currentTime - currentTime;
-			}
-			if (tTheirTime !== midi.currentTime) {
-				tOurTime = Date.now();
-				tTheirTime = midi.currentTime;
-			}
-		} else { // paused
-			currentTime = midi.currentTime;
-		}
-		///
-		var endTime = midi.endTime;
-		var percent = currentTime / endTime;
-		var total = currentTime / 1000;
-		var minutes = total / 60;
-		var seconds = total - (minutes * 60);
-		var t1 = minutes * 60 + seconds;
-		var t2 = (endTime / 1000);
-		///
-		if (t2 - t1 < -1.0) {
-			return;
-		} else {
-			callback({
-				now: t1,
-				end: t2,
-				events: noteRegistrar
-			});
-		}
-	};
-	///
-	requestAnimationFrame(frame);
-};
-
 // helpers
+
+midi.playMidiFile = function(midiFile, onsuccess, onprogress) {
+	midi.stop()
+	midi.replayer = new Replayer(midiFile, midi.timeWarp, null, midi.BPM);
+	midi.data = midi.replayer.getData();
+	midi.endTime = getLength();
+	MIDI.loadPlugin({
+		instruments: midiFile['instruments'],
+		onsuccess: midi.start,
+		onprogress: onprogress,
+		onerror: onerror,
+		soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/"
+	});
+}
 
 midi.loadMidiFile = function(onsuccess, onprogress, onerror) {
 	try {
@@ -117,7 +75,8 @@ midi.loadMidiFile = function(onsuccess, onprogress, onerror) {
 			instruments: midiFile['instruments'],
 			onsuccess: onsuccess,
 			onprogress: onprogress,
-			onerror: onerror
+			onerror: onerror,
+			soundfontUrl: "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/"
 		});
 	} catch(event) {
 		onerror && onerror(event);
@@ -126,9 +85,12 @@ midi.loadMidiFile = function(onsuccess, onprogress, onerror) {
 
 midi.loadFile = function(file, onsuccess, onprogress, onerror) {
 	midi.stop();
-	if (file.indexOf('base64,') !== -1) {
-		var data = window.atob(file.split(',')[1]);
-		midi.currentData = data;
+	if (file instanceof Uint8Array) {
+		midi.currentData = file;
+		midi.loadMidiFile(onsuccess, onprogress, onerror)
+	}
+	else if (file.indexOf('base64,') !== -1) {
+		midi.currentData = window.atob(file.split(',')[1]);;
 		midi.loadMidiFile(onsuccess, onprogress, onerror);
 	} else {
 		var fetch = new XMLHttpRequest();

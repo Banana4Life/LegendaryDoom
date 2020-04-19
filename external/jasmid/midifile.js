@@ -9,7 +9,7 @@ function MidiFile(data) {
         return {
             'id': id,
             'length': length,
-            'stream': ByteStream(stream.readChunk(length))
+            'stream': new ByteStream(stream.readChunk(length))
         };
     }
 
@@ -194,7 +194,7 @@ function MidiFile(data) {
             }
         }
     }
-    stream = ByteStream(data)
+    stream = new ByteStream(data)
     var headerChunk = readChunk(stream);
     if (headerChunk.id != 'MThd' || headerChunk.length != 6) {
         throw "Bad .mid file - header not found";

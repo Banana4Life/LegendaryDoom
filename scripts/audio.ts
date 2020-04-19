@@ -11,7 +11,6 @@ class AudioManager {
     audioContext: AudioContext
 
     audioCache = {}
-
     t = 0
 
     update(dt) {
@@ -64,49 +63,44 @@ class AudioManager {
         return new WadAudio(audioBuffer, 0.15)
     }
 
-    // @ts-ignore
-    // soundfont = Soundfont
+    musicCache = {}
 
     playing = false
-    playMusic() {
+    playMusic(name) {
+        name = "D_E1M1"
         if (this.playing) {
             return
         }
-        let music = game.doomGame.getMusic("D_E1M1")
-        let midiBinary = mus2midi(music.data.buffer)
-        if (midiBinary !== false) {
-            let blobUrl = URL.createObjectURL(new Blob([new Uint8Array(midiBinary)], {type: "audio/midi"}))
 
+        if (!this.musicCache[name]) {
+            this.musicCache[name] = this.getMidiFromMus(name)
+        }
+
+        let midiFile = this.musicCache[name]
+        if (midiFile) {
             console.log("Start Midi...")
             // @ts-ignore
-            MIDI.Player.currentData = new Uint8Array(midiBinary)
+            MIDI.Player.playMidiFile(midiFile)
             // @ts-ignore
-            MIDI.Player.loadMidiFile(() => {
-            // MIDI.Player.loadFile(blobUrl, () => {
-                // MIDI.Player.currentTime = MIDI.Player.ctx.currentTime
-                // @ts-ignore
-                MIDI.Player.start(queue => {
-                    // TODO music starts late
-                    console.log(`Music loaded with ${queue.length} events`)
-                })
-            }, null, console.log);
+            MIDI.Player.setListener(data => {
+                if (data.now >= data.end) {
+                    this.playing = false;
+                    console.log("MIDI Song finished");
+                }
+            })
             this.playing = true;
         }
     }
 
-    private getMusic() {
-        let map = []
-        let delta = 0.05
-        map.push([delta*0, 'C4'])
-        map.push([delta*1, 'D4'])
-        map.push([delta*2, 'E4'])
-        map.push([delta*3, 'F4'])
-        map.push([delta*4, 'G4'])
-        map.push([delta*5, 'A4'])
-        map.push([delta*6, 'B4'])
-        map.push([delta*7, 'C5'])
-        return map
+    getMidiFromMus(name) {
+        let music = game.doomGame.getMusic(name)
+        let midiBinary = mus2midi(music.data.buffer)
+        if (midiBinary !== false) {
+            return MidiFile(new Uint8Array(midiBinary))
+        }
+        return undefined;
     }
+
 }
 
 class WadAudio {
