@@ -163,6 +163,15 @@ class DoomGame {
 
         return new DoomGame(wad, colorMap, colorPalette, patches, flats, textures, maps)
     }
+
+    logStats() {
+        console.info(`Number of color maps loaded: ${this.colorMaps.length}`)
+        console.info(`Number of color palettes loaded: ${this.colorPalettes.length}`)
+        console.info(`Number of patches loaded: ${this.patches.getSize()}`)
+        console.info(`Number of flats loaded: ${this.flats.getSize(true)} (${this.flats.getPictureCount(true)} pictures)`)
+        console.info(`Number of textures loaded: ${this.textures.getSize()}`)
+        console.info(`Number of maps loaded: ${this.maps.length}`)
+    }
 }
 
 type DoomMapName = { episode: number, map: number } | { level: number }
@@ -637,6 +646,10 @@ class DoomPatchMap {
             return this.patches[id]
         }
     }
+
+    getSize() {
+        return this.patches.length
+    }
 }
 
 type DoomPixelData = ArrayLike<number>
@@ -742,7 +755,7 @@ class DoomFlatFolder {
         if (recurse) {
             return this.children.map(child => {
                 if (child instanceof DoomFlatFolder) {
-                    return child.getSize(recurse)
+                    return 1 + child.getSize(recurse)
                 } else {
                     return 1
                 }
@@ -830,6 +843,10 @@ class DoomTextureMap {
             return null
         }
         return tex
+    }
+
+    getSize() {
+        return this.textures.size
     }
 }
 
