@@ -9,7 +9,7 @@ class Game {
     constructor(gameData: DoomGame) {
         this.controls = new Controls()
         this.renderer = new Renderer()
-        this.audio = new AudioManager(this)
+        this.audio = new AudioManager(gameData)
         this.doomGame = gameData
         this.paused = false
     }

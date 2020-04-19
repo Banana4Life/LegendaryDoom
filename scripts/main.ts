@@ -70,8 +70,13 @@ function main() {
                     let game = new Game(gameData)
 
                     return game.init().then(() => {
-                        game.audio.playMusic("D_E1M1");
+                        game.audio.playMusic("D_E1M1")
                         game.audio.playMusic("D_INTER")
+
+                        document.querySelectorAll('.audio-trigger').forEach(trigger => {
+                            trigger.addEventListener('click', () => game.audio.playMusic(trigger.innerHTML))
+                        })
+
                         return wadReceivedTime
                     })
                 })
