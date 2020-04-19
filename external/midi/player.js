@@ -108,12 +108,13 @@ midi.setAnimation = function(callback) {
 
 midi.loadMidiFile = function(onsuccess, onprogress, onerror) {
 	try {
-		midi.replayer = new Replayer(MidiFile(midi.currentData), midi.timeWarp, null, midi.BPM);
+		let midiFile = MidiFile(midi.currentData);
+		midi.replayer = new Replayer(midiFile, midi.timeWarp, null, midi.BPM);
 		midi.data = midi.replayer.getData();
 		midi.endTime = getLength();
-		///
+
 		MIDI.loadPlugin({
-			instruments: midi.getFileInstruments(),
+			instruments: midiFile['instruments'],
 			onsuccess: onsuccess,
 			onprogress: onprogress,
 			onerror: onerror
@@ -154,36 +155,6 @@ midi.loadFile = function(file, onsuccess, onprogress, onerror) {
 		};
 		fetch.send();
 	}
-};
-
-midi.getFileInstruments = function() {
-	var instruments = {};
-	var programs = {};
-	for (var n = 0; n < midi.data.length; n ++) {
-		var event = midi.data[n][0].event;
-		if (event.type !== 'channel') {
-			continue;
-		}
-		var channel = event.channel;
-		switch(event.subtype) {
-			case 'controller':
-//				console.log(event.channel, MIDI.defineControl[event.controllerType], event.value);
-				break;
-			case 'programChange':
-				programs[channel] = event.programNumber;
-				break;
-			case 'noteOn':
-				var program = programs[channel];
-				var gm = MIDI.GM.byId[isFinite(program) ? program : channel];
-				instruments[gm.id] = true;
-				break;
-		}
-	}
-	var ret = [];
-	for (var key in instruments) {
-		ret.push(key);
-	}
-	return ret;
 };
 
 // Playing the audio

@@ -79,7 +79,10 @@ class AudioManager {
 
             console.log("Start Midi...")
             // @ts-ignore
-            MIDI.Player.loadFile(blobUrl, () => {
+            MIDI.Player.currentData = new Uint8Array(midiBinary)
+            // @ts-ignore
+            MIDI.Player.loadMidiFile(() => {
+            // MIDI.Player.loadFile(blobUrl, () => {
                 // MIDI.Player.currentTime = MIDI.Player.ctx.currentTime
                 // @ts-ignore
                 MIDI.Player.start(queue => {

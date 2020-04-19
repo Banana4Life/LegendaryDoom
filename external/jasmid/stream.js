@@ -1,20 +1,26 @@
 /* Wrapper for accessing strings through sequential reads */
-function Stream(str) {
+function ByteStream(data) {
     var position = 0;
 
     function read(length) {
-        var result = str.substr(position, length);
+        let decodedSlice = new TextDecoder("ASCII").decode(data.slice(position, position + length));
         position += length;
-        return result;
+        return decodedSlice;
+    }
+
+    function readChunk(length) {
+        let slice = data.slice(position, position + length)
+        position += length;
+        return slice;
     }
 
     /* read a big-endian 32-bit integer */
     function readInt32() {
         var result = (
-            (str.charCodeAt(position) << 24)
-            + (str.charCodeAt(position + 1) << 16)
-            + (str.charCodeAt(position + 2) << 8)
-            + str.charCodeAt(position + 3));
+            (data[position] << 24)
+            + (data[position + 1] << 16)
+            + (data[position + 2] << 8)
+            + data[position + 3]);
         position += 4;
         return result;
     }
@@ -22,22 +28,22 @@ function Stream(str) {
     /* read a big-endian 16-bit integer */
     function readInt16() {
         var result = (
-            (str.charCodeAt(position) << 8)
-            + str.charCodeAt(position + 1));
+            (data[position] << 8)
+            + data[position + 1]);
         position += 2;
         return result;
     }
 
     /* read an 8-bit integer */
     function readInt8(signed) {
-        var result = str.charCodeAt(position);
+        var result = data[position];
         if (signed && result > 127) result -= 256;
         position += 1;
         return result;
     }
 
     function eof() {
-        return position >= str.length;
+        return position >= data.length;
     }
 
     /* read a MIDI-style variable-length integer
@@ -58,9 +64,14 @@ function Stream(str) {
         }
     }
 
+    function pos() {
+        return position;
+    }
+
     return {
         'eof': eof,
         'read': read,
+        'readChunk': readChunk,
         'readInt32': readInt32,
         'readInt16': readInt16,
         'readInt8': readInt8,
