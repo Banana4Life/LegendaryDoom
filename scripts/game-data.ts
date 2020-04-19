@@ -63,7 +63,7 @@ class DoomGame {
             let patchName = readASCIIString(pnamesLump.data, 4 + (i * WADLump.NameLength), WADLump.NameLength)
             let lump = DoomGame.findLump(wad.dictionary, patchName)
             let patch = DoomPatch.parse(lump.data)
-            patches.set(name, patch)
+            patches.set(patchName, patch)
         }
 
         return patches
