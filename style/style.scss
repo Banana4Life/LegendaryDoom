@@ -16,7 +16,6 @@ html, body {
 #game-panel {
   width: calc(100% - 200px);
   canvas {
-    width: 100%;
     &.is-paused {
       filter: grayscale(80%);
     }
@@ -50,7 +49,7 @@ html, body {
 }
 
 canvas {
-  width: 640px;
-  height: 480px;
+  width: 1600px;
+  height: 1024px;
   image-rendering: crisp-edges;
 }
