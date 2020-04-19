@@ -9,7 +9,11 @@
     "scripts/main.ts",
     "scripts/game.ts",
     "scripts/audio.ts",
-    "external/soundfont-player.js",
+//    "external/soundfont-player.js",
+    "external/jasmid/midifile.js",
+    "external/jasmid/stream.js",
+    "external/jasmid/replayer.js",
+//    "external/midijs/MIDI.js",
     "external/mus2midi.js"
   ],
   "compilerOptions": {

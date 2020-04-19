@@ -50,9 +50,7 @@ class Game {
             .then(file => parseWad(file))
             .then(wad => DoomGame.parse(wad)).then(doomGame => this.doomGame = doomGame)
             .catch(any => undefined)
-
         this.renderer.initRenderer().then(this.startLoop)
-
     }
 
     private update0(dt) {
@@ -60,12 +58,15 @@ class Game {
         if (this.paused) {
             return
         }
+
         // TODO actual game logic
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
             // game.audio.play(Sound.PISTOL, 0.2)
-            // game.audio.play(Sound.PLASMA, 0.2, true)
-            game.audio.playMusic()
-
+            game.audio.play(Sound.PLASMA, 0.2, true)
+        }
+        if (this.controls.buttonPressed(this.controls.buttons.MIDDLE)) {
+            game.audio.playWadSound("OOF", 0.2)
+            this.audio.playMusic()
         }
         if (this.controls.keyPressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!"

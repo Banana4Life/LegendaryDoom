@@ -65,25 +65,29 @@ class AudioManager {
     }
 
     // @ts-ignore
-    soundfont = Soundfont
+    // soundfont = Soundfont
 
     playing = false
     playMusic() {
         if (this.playing) {
             return
         }
-        this.playing = true;
+        let music = game.doomGame.getMusic("D_E1M1")
+        let midiBinary = mus2midi(music.data.buffer)
+        let decoded = new Uint8Array(midiBinary)     .reduce((data, byte) => data + String.fromCharCode(byte), '');
+        let encoded = "base64," + btoa(decoded)
 
-        let ac = new AudioContext()
-        let map = this.getMusic()
-        this.soundfont.instrument(ac, 'acoustic_grand_piano', {}).then(function (piano) {
-            piano.schedule(0, map)
-            piano.stop(map[map.length-1][0]+1)
-            // piano.on('stop', () => {
-            //     console.log("stopped")
-            //     this["playing"] = false
-            // });
-        })
+        console.log("Start Midi...")
+        // @ts-ignore
+        MIDI.Player.loadFile(encoded, () => {
+            // MIDI.Player.currentTime = MIDI.Player.ctx.currentTime
+            // @ts-ignore
+            MIDI.Player.start(queue => {
+                // TODO music starts late
+                console.log(`Music loaded with ${queue.length} events`)
+            })
+        }, null, console.log);
+        this.playing = true;
     }
 
     private getMusic() {
