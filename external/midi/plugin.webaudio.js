@@ -235,118 +235,77 @@
 			var urls = [];
 			var notes = root.keyToNote;
 			for (var key in notes) urls.push(key);
-			///
-			var waitForEnd = function(instrument) {
-				for (var key in bufferPending) { // has pending items
-					if (bufferPending[key]) return;
-				}
-				///
-				if (onload) { // run onload once
-					onload();
-					onload = null;
-				}
-			};
-			///
 			var requestAudio = function(soundfont, instrumentId, index, key) {
 				var url = soundfont[key];
 				if (url) {
 					bufferPending[instrumentId] ++;
-					loadAudio(url, function(buffer) {
-						if (buffer.length === 0) {
-							debugger
-						}
+					return loadAudio(url).then(buffer => {
 						buffer.id = key;
-						var noteId = root.keyToNote[key];
+						let noteId = root.keyToNote[key];
 						audioBuffers[instrumentId + '' + noteId] = buffer;
-						///
-						if (-- bufferPending[instrumentId] === 0) {
-							var percent = index / 87;
-// 							console.log(MIDI.GM.byId[instrumentId], 'processing: ', percent);
-							soundfont.isLoaded = true;
-							waitForEnd(instrument);
-						}
-					}, function(err) {
-						console.log("Error creating buffer" + err + " for " + instrument + " " + key);
-					});
+					})
 				}
+				console.log("Missing url for soundfont " + instrumentId + " " + key)
+				return Promise.reject()
 			};
+
+			let allPromise = Promise.resolve()
+
 			///
-			var bufferPending = {};
-			for (var instrument in root.Soundfont) {
-				var soundfont = root.Soundfont[instrument];
+			let bufferPending = {};
+			for (let instrument in root.Soundfont) {
+				let soundfont = root.Soundfont[instrument];
 				if (soundfont.isLoaded) {
- 					continue;
+					continue;
 				}
 				///
-				var synth = root.GM.byName[instrument];
-				var instrumentId = synth.number;
+				let synth = root.GM.byName[instrument];
+				let instrumentId = synth.number;
 				///
 				bufferPending[instrumentId] = 0;
 				///
-				for (var index = 0; index < urls.length; index++) {
-					var key = urls[index];
-					requestAudio(soundfont, instrumentId, index, key);
-				}
+				allPromise = allPromise.then(() => {
+					let promise = Promise.resolve()
+					console.log(`Load instrument ${instrumentId}`)
+					for (let index = 0; index < urls.length; index++) {
+						let key = urls[index];
+						promise = promise.then(() => requestAudio(soundfont, instrumentId, index, key))
+					}
+					promise = promise.then(() => {
+						console.log(`Loaded instrument ${instrumentId}`)
+						soundfont.isLoaded = true;
+					})
+					return promise
+
+				})
 			}
-			///
-			setTimeout(waitForEnd, 1);
+
+			allPromise.then(onload).catch(onerror)
 		};
+
+		function convertDataURIToBinary(base64) {
+			let raw = atob(base64);
+			let rawLength = raw.length;
+			let array = new Uint8Array(new ArrayBuffer(rawLength));
+
+			for(let i = 0; i < rawLength; i++) {
+				array[i] = raw.charCodeAt(i);
+			}
+			return array;
+		}
 
 		/* Load audio file: streaming | base64 | arraybuffer
 		---------------------------------------------------------------------- */
-		function loadAudio(url, onload, onerror) {
-			if (useStreamingBuffer) {
-				var audio = new Audio();
-				audio.src = url;
-				audio.controls = false;
-				audio.autoplay = false;
-				audio.preload = false;
-				audio.addEventListener('canplay', function() {
-					onload && onload(audio);
-				});
-				audio.addEventListener('error', function(err) {
-					onerror && onerror(err);
-				});
-				document.body.appendChild(audio);
-			} else if (url.indexOf('data:audio') === 0) { // Base64 string
-				var base64 = url.split(',')[1];
-
-				function convertDataURIToBinary(base64) {
-					var raw = atob(base64);
-					var rawLength = raw.length;
-					var array = new Uint8Array(new ArrayBuffer(rawLength));
-
-					for(let i = 0; i < rawLength; i++) {
-						array[i] = raw.charCodeAt(i);
-					}
-					return array;
-				}
-
-				let array = convertDataURIToBinary(base64)
-				var buffer = Base64Binary.decodeArrayBuffer(base64);
-				let tries = 0;
-				let onErrorRetry = (e) => {
-					tries++;
-					if (tries > 5) {
-						onerror(e)
-						return
-					}
-					ctx.decodeAudioData(convertDataURIToBinary(base64).buffer, onload, onErrorRetry)
-				}
-				ctx.decodeAudioData(array.buffer, onload, onErrorRetry)
-			} else { // XMLHTTP buffer
-				var request = new XMLHttpRequest();
-				request.open('GET', url, true);
-				request.responseType = 'arraybuffer';
-				request.onload = function() {
-					ctx.decodeAudioData(request.response, onload, onerror);
-				};
-				request.send();
-			}
-		};
+		function loadAudio(url) {
+			let base64 = url.split(',')[1];
+			let array = convertDataURIToBinary(base64)
+			return ctx.decodeAudioData(array.buffer)
+		}
 		
 		function createAudioContext() {
 			return new (window.AudioContext || window.webkitAudioContext)();
-		};
+		}
 	})();
 })(MIDI);
+
+var foobar

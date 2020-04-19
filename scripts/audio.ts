@@ -95,19 +95,50 @@ class AudioManager {
         }
     }
 
+    cacheMusic() {
+        return Promise.all([
+            this.cacheMusic0('D_E1M1'),
+            this.cacheMusic0('D_E1M2'),
+            this.cacheMusic0('D_E1M3'),
+            this.cacheMusic0('D_E1M4'),
+            this.cacheMusic0('D_E1M5'),
+            this.cacheMusic0('D_E1M6'),
+            this.cacheMusic0('D_E1M7'),
+            this.cacheMusic0('D_E1M8'),
+            this.cacheMusic0('D_E1M9'),
+            this.cacheMusic0('D_INTER'),
+            this.cacheMusic0('D_INTRO'),
+            this.cacheMusic0('D_VICTOR'),
+            this.cacheMusic0('D_INTROA')]
+        ).then(() => console.log("SET:" + Array.from(this.instrumentSet.values())));
+    }
+
+    instrumentSet = new Set()
+
+    cacheMusic0(name: string) {
+        return new Promise<unknown>((resolve, reject) => {
+            if (!this.musicCache[name]) {
+                this.musicCache[name] = this.getMidiFromMus(name)
+            }
+            let cached = this.musicCache[name]
+            for (let cachedElementKey in cached['instruments']) {
+                this.instrumentSet.add(cached['instruments'][cachedElementKey])
+            }
+            if (cached) {
+                resolve(cached)
+            } else {
+                reject()
+            }
+        })
+
+    }
+
     playMusic(name, volume = 0.2) {
-        console.log("Playing" + this.playing)
-        console.log("Play" + name)
         if (this.playing && this.playing === name) {
             return
         }
 
-        if (!this.musicCache[name]) {
-            this.musicCache[name] = this.getMidiFromMus(name)
-        }
-
-        let midiFile = this.musicCache[name]
-        if (midiFile) {
+        this.cacheMusic0(name).then(midiFile => {
             this.playing = name
             this.midiInitialized = false
             console.log("Start playing Midi " + name + " with " + midiFile['instruments'])
@@ -119,12 +150,12 @@ class AudioManager {
             MIDI.Player.setListener(data => {
                 if (data.now >= data.end) {
                     this.playing = undefined
+                    // @ts-ignore
                     MIDI.Player.setListener(undefined);
                     console.log("MIDI Song finished")
                 }
             })
-
-        }
+        })
     }
 
     getMidiFromMus(name) {
