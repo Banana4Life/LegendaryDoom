@@ -87,12 +87,12 @@ class DoomGame {
         function extractName(lump: WADLump): DoomMapName | null {
             let originalMatch = originalName.exec(lump.name)
             if (originalMatch !== null) {
-                return {x: parseInt(originalMatch[1]), y: parseInt(originalMatch[2])}
+                return {episode: parseInt(originalMatch[1]), map: parseInt(originalMatch[2])}
             }
 
             let laterMatch = laterName.exec(lump.name)
             if (laterMatch !== null) {
-                return {n: parseInt(laterMatch[1])}
+                return {level: parseInt(laterMatch[1])}
             }
 
             return null
@@ -130,7 +130,7 @@ class DoomGame {
     }
 }
 
-type DoomMapName = { x: number, y: number } | { n: number }
+type DoomMapName = { episode: number, map: number } | { level: number }
 
 class DoomMap {
     readonly name: DoomMapName
