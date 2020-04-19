@@ -68,6 +68,7 @@ class WAD {
 }
 
 class WADLump {
+    static readonly NameLength = 8
     static readonly StructSize = 16
 
     readonly name: string
@@ -112,7 +113,7 @@ function parseDictionary(buf: Uint8Array, offset: number, lumpCount: number): WA
         let lumpOffset = offset + (i * WADLump.StructSize)
         let dataPointer = readU32LE(buf, lumpOffset)
         let dataLength = readU32LE(buf, lumpOffset + 4)
-        let name = readASCIIString(buf, lumpOffset + 8, 8)
+        let name = readASCIIString(buf, lumpOffset + 8, WADLump.NameLength)
 
         dict.push(new WADLump(name, buf.slice(dataPointer, dataPointer + dataLength)))
     }

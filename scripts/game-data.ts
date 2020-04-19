@@ -20,13 +20,55 @@ class DoomGame {
     }
 
     getSound(name: string): DoomSound | null {
-        let soundLumpName = `DS${name}`.toUpperCase()
-        for (let lump of this.wad.dictionary) {
-            if (lump.name === soundLumpName) {
-                return DoomSound.parse(lump.data)
+        let lump = DoomGame.findLump(this.wad.dictionary, `DS${name}`.toUpperCase())
+        if (lump === null) {
+            return null
+        }
+        return DoomSound.parse(lump.data)
+    }
+
+    getMusic(name: string): DoomMusic | null {
+        let lump = DoomGame.findLump(this.wad.dictionary, name.toUpperCase())
+        if (lump === null) {
+            return null
+        }
+        return DoomMusic.parse(lump.data)
+    }
+
+    private static findLump(dict: WADDictionary, name: string): WADLump | null {
+        for (let lump of dict) {
+            if (lump.name === name) {
+                return lump
             }
         }
         return null
+    }
+
+    private static parseColorMap(wad: WAD): DoomColorMap {
+        let lump = DoomGame.findLump(wad.dictionary, "COLORMAP")
+        if (lump === null) {
+            return null
+        }
+
+        return DoomColorMap.parse(lump.data)
+    }
+
+    private static parsePatches(wad: WAD): Map<string, DoomPatch> {
+        let pnamesLump = DoomGame.findLump(wad.dictionary, "PNAMES")
+        if (pnamesLump === null) {
+            return new Map<string, DoomPatch>()
+        }
+
+        let patchCount = readU32LE(pnamesLump.data, 0)
+        let patches = new Map<string, DoomPatch>()
+        for (let i = 0; i < patchCount; ++i) {
+            let patchName = readASCIIString(pnamesLump.data, 4 + (i * WADLump.NameLength), WADLump.NameLength)
+            let lump = DoomGame.findLump(wad.dictionary, patchName)
+            let patch = DoomPatch.parse(lump.data)
+            patches.set(name, patch)
+        }
+
+        return patches
     }
 
     private static parseMaps(wad: WAD): DoomMap[] {
@@ -67,24 +109,6 @@ class DoomGame {
 
         return findMaps(0, [])
 
-    }
-
-    private static parseColorMap(wad: WAD): DoomColorMap {
-        function findColorMapLump(dict: WADDictionary): WADLump | null {
-            for (let lump of dict) {
-                if (lump.name === "COLORMAP") {
-                    return lump
-                }
-            }
-            return null
-        }
-
-        let lump = findColorMapLump(wad.dictionary)
-        if (lump === null) {
-            return null
-        }
-
-        return DoomColorMap.parse(lump.data)
     }
 
     static parse(wad: WAD): DoomGame {
@@ -407,8 +431,8 @@ class DoomSector {
         return new DoomSector(
             readU16LE(buf, i),
             readU16LE(buf, i + 2),
-            readASCIIString(buf, i + 4, 8),
-            readASCIIString(buf, i + 12, 8),
+            readASCIIString(buf, i + 4, WADLump.NameLength),
+            readASCIIString(buf, i + 12, WADLump.NameLength),
             readI16LE(buf, i + 20),
             readI16LE(buf, i + 22),
             readI16LE(buf, i + 24)
@@ -490,6 +514,24 @@ class DoomSound {
     }
 }
 
+type DoomMusicFormat = "mus" | "midi"
+
+class DoomMusic {
+    readonly format: DoomMusicFormat
+    readonly data: Uint8Array
+
+    constructor(format: DoomMusicFormat, data: Uint8Array) {
+        this.format = format;
+        this.data = data;
+    }
+
+    static parse(buf: Uint8Array): DoomMusic {
+        return new DoomMusic(
+            "mus", buf
+        )
+    }
+}
+
 class DoomColorMap {
     readonly maps: number[][]
 
@@ -509,5 +551,16 @@ class DoomColorMap {
         }
 
         return new DoomColorMap(maps)
+    }
+}
+
+class DoomPalette {
+    // TODO implement and use me
+}
+
+class DoomPatch {
+    // TODO implement me
+    static parse(buf: Uint8Array): DoomPatch {
+        return new DoomPatch()
     }
 }
