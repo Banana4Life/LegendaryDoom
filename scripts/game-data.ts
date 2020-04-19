@@ -4,12 +4,12 @@ class DoomGame {
     readonly colorPalettes: DoomPalette[]
     readonly patches: DoomPatchMap
     readonly flats: DoomFlatFolder
-    readonly textures: Map<string, DoomTexture>
+    readonly textures: DoomTextureMap
     readonly maps: DoomMap[]
 
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
-    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: DoomPatchMap, flats: DoomFlatFolder, textures: Map<string, DoomTexture>, maps: DoomMap[]) {
+    constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: DoomPatchMap, flats: DoomFlatFolder, textures: DoomTextureMap, maps: DoomMap[]) {
         this.wad = wad
         this.colorMaps = colorMap
         this.colorPalettes = colorPalette
@@ -80,7 +80,7 @@ class DoomGame {
         return new DoomPatchMap(patches)
     }
 
-    private static parseTextures(wad: WAD, patches: DoomPatchMap): Map<string, DoomTexture> {
+    private static parseTextures(wad: WAD, patches: DoomPatchMap): DoomTextureMap {
         function parseTextureLump(lump: WADLump): DoomTexture[] {
             let buf = lump.data
             let textureCount = readU32LE(buf, 0)
@@ -110,7 +110,7 @@ class DoomGame {
             map.set(tex.name, tex)
         }
 
-        return map
+        return new DoomTextureMap(map)
     }
 
     private static parseMaps(wad: WAD): DoomMap[] {
@@ -299,17 +299,17 @@ class DoomLineDef {
 class DoomSideDef {
     static readonly StructSize = 30
 
-    readonly xOffset: number
-    readonly yOffset: number
+    readonly offsetX: number
+    readonly offsetY: number
     readonly upperTextureName: string
     readonly lowerTextureName: string
     readonly middleTextureName: string
     readonly sectorIndex: number
 
 
-    constructor(xOffset: number, yOffset: number, upperTextureName: string, lowerTextureName: string, middleTextureName: string, sectorIndex: number) {
-        this.xOffset = xOffset
-        this.yOffset = yOffset
+    constructor(offsetX: number, offsetY: number, upperTextureName: string, lowerTextureName: string, middleTextureName: string, sectorIndex: number) {
+        this.offsetX = offsetX
+        this.offsetY = offsetY
         this.upperTextureName = upperTextureName
         this.lowerTextureName = lowerTextureName
         this.middleTextureName = middleTextureName
@@ -320,9 +320,9 @@ class DoomSideDef {
         return new DoomSideDef(
             readI16LE(buf, i),
             readI16LE(buf, i + 2),
-            readASCIIString(buf, i + 4, 4),
-            readASCIIString(buf, i + 4, 12),
-            readASCIIString(buf, i + 4, 20),
+            readASCIIString(buf, i + 4, WADLump.NameLength),
+            readASCIIString(buf, i + 12, WADLump.NameLength),
+            readASCIIString(buf, i + 20, WADLump.NameLength),
             readU16LE(buf, i + 28)
         )
     }
@@ -814,6 +814,22 @@ class DoomFlatFolder {
 
         let [, folder] = parseTree(dict, DoomFlatFolder.RootName, lumpIndex + 1)
         return folder
+    }
+}
+
+class DoomTextureMap {
+    readonly textures: Map<string, DoomTexture>
+
+    constructor(textures: Map<string, DoomTexture>) {
+        this.textures = textures;
+    }
+
+    getTexture(name: string): DoomTexture | null {
+        let tex = this.textures.get(name)
+        if (tex === undefined) {
+            return null
+        }
+        return tex
     }
 }
 
