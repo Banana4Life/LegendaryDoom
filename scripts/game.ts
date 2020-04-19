@@ -51,7 +51,7 @@ class Game {
             .then(blob => new File([blob], "doom.wad", {type: WAD.FileMimeType}))
             .then(file => parseWad(file))
             .then(wad => DoomGame.parse(wad)).then(doomGame => this.doomGame = doomGame)
-            .then(() => this.audio.playMusic("D_INTER"))
+            //.then(() => this.audio.playMusic("D_INTER"))
         let rendererPromise = this.renderer.initRenderer()
         Promise.all([dataPromise, rendererPromise]).then(this.startLoop)
     }
@@ -82,6 +82,7 @@ class Game {
     }
 
     private startLoop() {
+        game.renderer.loadTextures(game.doomGame.textures.textures)
         game.renderer.loadMap(game.doomGame.maps[0])
 
         this.paused = false

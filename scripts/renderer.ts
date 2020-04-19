@@ -66,40 +66,6 @@ function loadShader(gl, baseName, attributes, uniforms) {
     })
 }
 
-function loadTexture(gl) {
-    const texture = gl.createTexture()
-    gl.bindTexture(gl.TEXTURE_2D, texture)
-
-    const width = 4
-    const height = 4
-    const count = 4
-
-    let raw = []
-    let black = [0, 0, 0, 255]
-    let colors = [[255, 0, 0, 255], [0, 0, 255, 255], [0, 255, 0, 255], [255, 255, 0, 255]]
-    for (let y = 0; y < height; y++) {
-        for (let i = 0; i < count; i++) {
-            for (let x = 0; x < width; x++) {
-                let color = black
-                let j = width * count * y + width * i + x
-                if ((j + Math.floor(j / (width * count))) % 2 == 0) {
-                    color = colors[i]
-                }
-                for (let c = 0; c < 4; c++) {
-                    raw.push(color[c])
-                }
-            }
-        }
-    }
-    const pixels = new Uint8Array(raw)
-
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width * count, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-
-    return texture
-}
-
 class Renderer {
     shaders
     canvas
@@ -145,10 +111,6 @@ class Renderer {
             textureTiling: gl.createBuffer()
         }
 
-        this.textures = {
-            atlas: loadTexture(gl)
-        }
-
         this.camera = new Transform()
         this.camera.setTranslation(0, 0, -6)
 
@@ -157,17 +119,72 @@ class Renderer {
         })
     }
 
+    loadTextures(textures: Map<string, DoomTexture>) {
+        const atlasWidth = 2048
+        const atlasHeight = 2048
+        const rowHeight = 128
+
+        let atlas = new Array(atlasWidth * atlasHeight)
+
+        for (let i = 0; i < atlasWidth * atlasHeight; i++) {
+            atlas[i] = 0
+        }
+
+        let atlasX = 0
+        let atlasY = 0
+
+        textures.forEach((texture, name) => {
+            if (atlasWidth < atlasX + texture.width) {
+                atlasX = 0
+                atlasY += rowHeight
+            }
+
+            for (let x = 0; x < texture.width; x++) {
+                for (let y = 0; y < texture.height; y++) {
+                    for (let p = 0; p < texture.patches.length; p++) {
+                        let patch = texture.patches[p]
+                        let pX = x + patch.originX + patch.patch.offsetX - (patch.patch.width / 2 - 1)
+                        let pY = y + patch.originY + patch.patch.offsetY - (patch.patch.height - 5)
+                        if (pX >= 0 && pX < patch.patch.width && pY >= 0 && pY < patch.patch.height) {
+                            atlas[(atlasY + y) * atlasWidth + atlasX + x] =
+                                patch.patch.pixels[pY * patch.patch.width + pX]
+                        }
+                    }
+                }
+            }
+
+            atlasX += texture.width
+        });
+
+        console.log("Texture atlas created.")
+
+        let pixels = new Uint8Array(atlas)
+
+        let gl = this.webgl
+
+        const atlasTexture = gl.createTexture()
+        gl.bindTexture(gl.TEXTURE_2D, atlasTexture)
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RED, atlasWidth, atlasHeight, 0, gl.RED, gl.UNSIGNED_BYTE, pixels)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+
+        this.textures = {
+            atlas: atlasTexture
+        }
+    }
+
     loadMap(map) {
         let textureCoordLookup = [
-            [0  ,0,  0  ,1,  .25,0,  .25,1],
-            [.25,0,  .25,1,  .5 ,0,  .5 ,1],
-            [.5 ,0,  .5 ,1,  .75,0,  .75,1],
-            [.75,0,  .75,1,  1  ,0,  1  ,1]
+            [24 / 2048, 0, 24 / 2048, 96 / 2048, (24 + 128) / 2048, 0, (24 + 128) / 2048, 96 / 2048],
+            [.25, 0, .25, 1, .5, 0, .5, 1],
+            [.5, 0, .5, 1, .75, 0, .75, 1],
+            [.75, 0, .75, 1, 1, 0, 1, 1]
         ]
         let textureBoundaryLookup = [
-            [0  , 0, .25, 1],
+            [24 / 2048, 0, 128 / 2048, 96 / 2048],
             [.25, 0, .25, 1],
-            [.5 , 0, .25, 1],
+            [.5, 0, .25, 1],
             [.75, 0, .25, 1]
         ]
 
@@ -198,7 +215,7 @@ class Renderer {
                 textureCoords = textureCoords.concat(textureCoordLookup[ti % 4])
                 for (let v = 0; v < 4; v++) {
                     textureBoundaries = textureBoundaries.concat(textureBoundaryLookup[ti % 4])
-                    textureTiling = textureTiling.concat([2, 1])
+                    textureTiling = textureTiling.concat([1, 1])
                 }
                 ti++
             }
