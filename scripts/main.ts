@@ -31,7 +31,7 @@ document.querySelectorAll('.drop-target').forEach(elem => {
                 console.log(wad.header.type, wad.header.lumpCount, wad.dictionary.length)
                 game.doomGame = DoomGame.parse(wad)
                 game.audio.playMusic("D_E1M1");
-                console.log(game.doomGame.maps.length)
+                game.doomGame.logStats()
             })
         }
     })
