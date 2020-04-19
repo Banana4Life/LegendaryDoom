@@ -5,3 +5,4 @@ scripts/*.js
 scripts/*.js.map
 style/**/*.css
 style/**/*.css.map
+*.wad
