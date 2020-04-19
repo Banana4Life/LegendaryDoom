@@ -429,8 +429,8 @@ class DoomSector {
 
     static parse(buf: Uint8Array, i: number): DoomSector {
         return new DoomSector(
-            readU16LE(buf, i),
-            readU16LE(buf, i + 2),
+            readI16LE(buf, i),
+            readI16LE(buf, i + 2),
             readASCIIString(buf, i + 4, WADLump.NameLength),
             readASCIIString(buf, i + 12, WADLump.NameLength),
             readI16LE(buf, i + 20),
