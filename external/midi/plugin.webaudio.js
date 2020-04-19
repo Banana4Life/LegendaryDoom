@@ -65,7 +65,8 @@
 			var bufferId = instrument + '' + noteId;
 			var buffer = audioBuffers[bufferId];
 			if (!buffer) {
-// 				console.log(MIDI.GM.byId[instrument].id, instrument, channelId);
+				MIDI.soundf
+				console.log("Missing Note" + MIDI.GM.byId[instrument].id, instrument, channelId);
 				return;
 			}
 
@@ -251,6 +252,9 @@
 				if (url) {
 					bufferPending[instrumentId] ++;
 					loadAudio(url, function(buffer) {
+						if (buffer.length === 0) {
+							debugger
+						}
 						buffer.id = key;
 						var noteId = root.keyToNote[key];
 						audioBuffers[instrumentId + '' + noteId] = buffer;
@@ -262,7 +266,7 @@
 							waitForEnd(instrument);
 						}
 					}, function(err) {
-						console.log("Error creating buffer" + err);
+						console.log("Error creating buffer" + err + " for " + instrument + " " + key);
 					});
 				}
 			};
@@ -271,7 +275,7 @@
 			for (var instrument in root.Soundfont) {
 				var soundfont = root.Soundfont[instrument];
 				if (soundfont.isLoaded) {
-					continue;
+ 					continue;
 				}
 				///
 				var synth = root.GM.byName[instrument];
@@ -325,6 +329,7 @@
 					tries++;
 					if (tries > 5) {
 						onerror(e)
+						return
 					}
 					ctx.decodeAudioData(convertDataURIToBinary(base64).buffer, onload, onErrorRetry)
 				}
