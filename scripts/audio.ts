@@ -3,19 +3,22 @@ enum Sound {
     PISTOL = "WAD:PISTOL",
     PLASMA = "WAD:PLASMA",
     START = "WAD:PSTART",
-    STOP = "WAD:PSTOP"
+    STOP = "WAD:PSTOP",
 }
 
 class AudioManager {
 
     game: Game
     audioContext: AudioContext
-    muted = false
-    audioCache = {}
-    t = 0
+    muted: boolean
+    audioCache
+    t: number
 
     constructor(game: Game) {
-        this.game = game;
+        this.game = game
+        this.muted = false
+        this.audioCache = {}
+        this.t = 0
     }
 
     update(dt) {
