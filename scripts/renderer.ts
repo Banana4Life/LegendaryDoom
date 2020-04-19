@@ -195,10 +195,10 @@ class Renderer {
             function addQuad(left, right, top, bottom, textureName) {
                 let prevVertexCount = vertices.length / 3
 
-                vertices = vertices.concat([left[0], top, left[1]])
-                vertices = vertices.concat([left[0], bottom, left[1]])
-                vertices = vertices.concat([right[0], top, right[1]])
-                vertices = vertices.concat([right[0], bottom, right[1]])
+                vertices = vertices.concat([left[1], top, left[0]])
+                vertices = vertices.concat([left[1], bottom, left[0]])
+                vertices = vertices.concat([right[1], top, right[0]])
+                vertices = vertices.concat([right[1], bottom, right[0]])
 
                 let triangleOffsets = [0, 1, 2, 1, 2, 3]
                 for (let triangleOffset of triangleOffsets) {

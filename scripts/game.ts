@@ -58,7 +58,9 @@ class Game {
         this.controls.keys.SPACEBAR.addCallback(this.togglePause.bind(this))
         this.controls.keys.M.addCallback(() => this.audio.toggleMusic(true))
 
-        this.cameraTransform.setTranslation(0, 0, -6)
+        let playerThing = this.doomGame.maps[0].things[0]
+        this.cameraTransform.setTranslation(-playerThing.y, -41, -playerThing.x)
+        this.cameraTransform.setRotation(0, deg2rad(90), 0)
 
         return this.renderer.initRenderer()
             .then(this.startLoop.bind(this))
