@@ -53,7 +53,7 @@ class Game {
 
     init(): Promise<void> {
         this.controls.init(0, 0)
-        this.controls.keys.SPACEBAR.addCallback(this.togglePause)
+        this.controls.keys.SPACEBAR.addCallback(this.togglePause.bind(this))
         this.controls.keys.M.addCallback(() => this.audio.toggleMusic(true))
 
 
