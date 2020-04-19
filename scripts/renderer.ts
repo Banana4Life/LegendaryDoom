@@ -69,7 +69,7 @@ function loadShader(gl, baseName, attributes, uniforms) {
 class Renderer {
     shaders: {program: any, attribute: {}, uniform: {}}[]
     canvas: HTMLCanvasElement
-    webgl: WebGLRenderingContext
+    webgl: WebGL2RenderingContext
     buffers
     textures
     camera: Transform
@@ -90,7 +90,7 @@ class Renderer {
         this.canvas.width = this.canvas.clientWidth
         this.canvas.height = this.canvas.clientHeight
 
-        this.webgl = this.canvas.getContext("webgl")
+        this.webgl = this.canvas.getContext("webgl2")
         let gl = this.webgl
 
         if (gl == null) {
@@ -166,7 +166,7 @@ class Renderer {
         const atlasTexture = gl.createTexture()
         gl.bindTexture(gl.TEXTURE_2D, atlasTexture)
 
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RED, atlasWidth, atlasHeight, 0, gl.RED, gl.UNSIGNED_BYTE, pixels)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, atlasWidth, atlasHeight, 0, gl.RED, gl.UNSIGNED_BYTE, pixels)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 
