@@ -833,15 +833,15 @@ class DoomTexture {
     }
 
     static parse(buf: Uint8Array, offset: number, patches: DoomPatchMap): DoomTexture {
-        let name = readASCIIString(buf, 0, WADLump.NameLength)
-        let masked = readU32LE(buf, 8) !== 0
-        let width = readU16LE(buf, 12)
-        let height = readU16LE(buf, 14)
+        let name = readASCIIString(buf, offset, WADLump.NameLength)
+        let masked = readU32LE(buf, offset + WADLump.NameLength) !== 0
+        let width = readU16LE(buf, offset + 12)
+        let height = readU16LE(buf, offset + 14)
         // 4 bytes for "columndirectory", seems to be unused
-        let patchCount = readU16LE(buf, 20)
+        let patchCount = readU16LE(buf, offset + 20)
         let texturePatches: DoomTexturePatch[] = new Array<DoomTexturePatch>(patchCount)
         for (let i = 0; i < patchCount; ++i) {
-            texturePatches[i] = DoomTexturePatch.parse(buf, 22 + (DoomTexturePatch.StructSize * i), patches)
+            texturePatches[i] = DoomTexturePatch.parse(buf, offset + 22 + (DoomTexturePatch.StructSize * i), patches)
         }
 
         return new DoomTexture(name, masked, width, height, texturePatches)
