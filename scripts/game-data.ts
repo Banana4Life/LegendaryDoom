@@ -301,18 +301,18 @@ class DoomSideDef {
 
     readonly offsetX: number
     readonly offsetY: number
-    readonly upperTextureName: DoomTexture | null
-    readonly lowerTextureName: DoomTexture | null
-    readonly middleTextureName: DoomTexture | null
+    readonly upperTexture: DoomTexture | null
+    readonly lowerTexture: DoomTexture | null
+    readonly middleTexture: DoomTexture | null
     readonly sectorIndex: number
 
 
-    constructor(offsetX: number, offsetY: number, upperTextureName: DoomTexture | null, lowerTextureName: DoomTexture | null, middleTextureName: DoomTexture | null, sectorIndex: number) {
+    constructor(offsetX: number, offsetY: number, upperTexture: DoomTexture | null, lowerTexture: DoomTexture | null, middleTexture: DoomTexture | null, sectorIndex: number) {
         this.offsetX = offsetX
         this.offsetY = offsetY
-        this.upperTextureName = upperTextureName
-        this.lowerTextureName = lowerTextureName
-        this.middleTextureName = middleTextureName
+        this.upperTexture = upperTexture
+        this.lowerTexture = lowerTexture
+        this.middleTexture = middleTexture
         this.sectorIndex = sectorIndex
     }
 
