@@ -119,6 +119,7 @@ class AudioManager {
             MIDI.Player.setListener(data => {
                 if (data.now >= data.end) {
                     this.playing = undefined
+                    MIDI.Player.setListener(undefined);
                     console.log("MIDI Song finished")
                 }
             })
