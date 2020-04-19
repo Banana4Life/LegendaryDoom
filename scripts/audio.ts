@@ -84,16 +84,21 @@ class AudioManager {
         }
     }
 
-    playMusic(name) {
+    playMusic(name, volume = 0.2) {
+        if (this.playing) {
+            return
+        }
+
         if (!this.musicCache[name]) {
             this.musicCache[name] = this.getMidiFromMus(name)
         }
 
         let midiFile = this.musicCache[name]
         if (midiFile) {
+            this.playing = true;
             console.log("Start Midi...")
             // @ts-ignore
-            MIDI.Player.playMidiFile(midiFile)
+            MIDI.Player.playMidiFile(midiFile, volume)
             // @ts-ignore
             MIDI.Player.setListener(data => {
                 if (data.now >= data.end) {
@@ -102,7 +107,7 @@ class AudioManager {
                     this.playMusic(name)
                 }
             })
-            this.playing = true;
+
         }
     }
 
