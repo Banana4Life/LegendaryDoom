@@ -129,6 +129,7 @@ class AudioManager {
     getMidiFromMus(name) {
         let music = this.gameData.getMusic(name)
         let midiBinary = mus2midi(music.data.buffer)
+        // console.log(btoa(new Uint8Array(midiBinary).reduce((data, byte) => data + String.fromCharCode(byte), '')))
         if (midiBinary !== false) {
             return MidiFile(new Uint8Array(midiBinary))
         }

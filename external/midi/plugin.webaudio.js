@@ -262,7 +262,7 @@
 							waitForEnd(instrument);
 						}
 					}, function(err) {
-		// 				console.log(err);
+						console.log("Error creating buffer" + err);
 					});
 				}
 			};
@@ -306,8 +306,29 @@
 				document.body.appendChild(audio);
 			} else if (url.indexOf('data:audio') === 0) { // Base64 string
 				var base64 = url.split(',')[1];
+
+				function convertDataURIToBinary(base64) {
+					var raw = atob(base64);
+					var rawLength = raw.length;
+					var array = new Uint8Array(new ArrayBuffer(rawLength));
+
+					for(let i = 0; i < rawLength; i++) {
+						array[i] = raw.charCodeAt(i);
+					}
+					return array;
+				}
+
+				let array = convertDataURIToBinary(base64)
 				var buffer = Base64Binary.decodeArrayBuffer(base64);
-				ctx.decodeAudioData(buffer, onload, onerror);
+				let tries = 0;
+				let onErrorRetry = (e) => {
+					tries++;
+					if (tries > 5) {
+						onerror(e)
+					}
+					ctx.decodeAudioData(convertDataURIToBinary(base64).buffer, onload, onErrorRetry)
+				}
+				ctx.decodeAudioData(array.buffer, onload, onErrorRetry)
 			} else { // XMLHTTP buffer
 				var request = new XMLHttpRequest();
 				request.open('GET', url, true);
