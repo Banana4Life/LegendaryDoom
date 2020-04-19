@@ -77,9 +77,9 @@ class Renderer {
 
     mapLoaded: boolean = false
 
-    readonly fov = 90 * Math.PI / 180
+    readonly fov = deg2rad(90)
     readonly near = 0.1
-    readonly far = 100000
+    readonly far = 10000
 
     constructor(cameraTransform: Transform) {
         this.camera = cameraTransform
