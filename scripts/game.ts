@@ -4,11 +4,13 @@ class Game {
     audio: AudioManager
     doomGame: DoomGame
     paused: boolean
+    private cameraTransform: Transform
 
 
     constructor(gameData: DoomGame) {
+        this.cameraTransform = new Transform()
         this.controls = new Controls()
-        this.renderer = new Renderer()
+        this.renderer = new Renderer(this.cameraTransform)
         this.audio = new AudioManager(gameData)
         this.doomGame = gameData
         this.paused = false
@@ -56,6 +58,7 @@ class Game {
         this.controls.keys.SPACEBAR.addCallback(this.togglePause.bind(this))
         this.controls.keys.M.addCallback(() => this.audio.toggleMusic(true))
 
+        this.cameraTransform.setTranslation(0, 0, -6)
 
         return this.renderer.initRenderer()
             .then(this.startLoop.bind(this))
@@ -66,6 +69,34 @@ class Game {
         if (this.paused) {
             return
         }
+
+        let speed = 500
+        let dx = 0
+        let dy = 0
+        let dz = 0
+        if (this.controls.keyPressed(this.controls.keys.MOVE_FORWARD)) {
+            dz += speed
+        }
+        if (this.controls.keyPressed(this.controls.keys.MOVE_BACKWARD)) {
+            dz += -speed
+        }
+        if (this.controls.keyPressed(this.controls.keys.MOVE_LEFT)) {
+            dx += speed
+        }
+        if (this.controls.keyPressed(this.controls.keys.MOVE_RIGHT)) {
+            dx += -speed
+        }
+        if (this.controls.keyPressed(this.controls.keys.MOVE_UP)) {
+            dy += -speed
+        }
+        if (this.controls.keyPressed(this.controls.keys.MOVE_DOWN)) {
+            dy += speed
+        }
+
+        let [dyaw, dpitch] = this.controls.getMouseChange()
+
+        this.cameraTransform.translate(dx * dt, dy * dt, dz * dt)
+        this.cameraTransform.rotate(deg2rad(dpitch) * dt, deg2rad(dyaw) * dt, 0)
 
         // TODO actual game logic
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {

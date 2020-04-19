@@ -5,6 +5,8 @@ class Controls {
         MOVE_BACKWARD: new ConfigurableKey("KeyS", "ArrowDown"),
         MOVE_LEFT: new ConfigurableKey("KeyA", "ArrowLeft"),
         MOVE_RIGHT: new ConfigurableKey("KeyD", "ArrowRight"),
+        MOVE_UP: new ConfigurableKey("ShiftLeft"),
+        MOVE_DOWN: new ConfigurableKey("ControlLeft"),
 
         ESCAPE: new ConfigurableKey("Escape"),
         SPACEBAR: new ConfigurableKey("Space"),
@@ -21,17 +23,29 @@ class Controls {
     pressedButton: number[] = []
     mousePos = {
         x: 0,
-        y: 0
+        y: 0,
+        lastX: 0,
+        lastY: 0,
     }
     private magicWords = ""
 
-    init(mouseX: number, mouseY: number) {
+    init(mouseX: number, mouseY: number): void {
         this.initListeners()
         this.mousePos.x = mouseX
         this.mousePos.y = mouseY
+        this.mousePos.lastX = 0
+        this.mousePos.lastY = 0
     }
 
-    buttonPressed(...buttons: number[]) {
+    getMouseChange(): [number, number] {
+        let x = this.mousePos.lastX
+        let y = this.mousePos.lastY
+        this.mousePos.lastX = 0
+        this.mousePos.lastY = 0
+        return [x, y]
+    }
+
+    buttonPressed(...buttons: number[]): boolean {
         for (const button of buttons) {
             if (this.pressedButton.indexOf(button) >= 0) {
                 return true
@@ -40,7 +54,7 @@ class Controls {
         return false
     }
 
-    keyPressed(...keys: ConfigurableKey[]) {
+    keyPressed(...keys: ConfigurableKey[]): boolean {
         for (const key of keys) {
             if (key.hasCodeIn(this.pressedKeys)) {
                 return true
@@ -49,12 +63,12 @@ class Controls {
         return false
     }
 
-    lockPointer(elem: Element) {
-        console.log("Pointer Locked onto " + elem)
+    lockPointer(elem: Element): void {
+        console.log("Locking pointer onto " + elem)
         elem.requestPointerLock()
     }
 
-    private initListeners() {
+    private initListeners(): void {
 
         document.querySelectorAll("canvas").forEach(elem => {
             elem.addEventListener("click", e => {
@@ -115,6 +129,8 @@ class Controls {
             if (document.pointerLockElement) {
                 this.mousePos.x += e.movementX
                 this.mousePos.y += e.movementY
+                this.mousePos.lastX += e.movementX
+                this.mousePos.lastY += e.movementY
                 // console.log(`LMOVE ${e.movementX}:${e.movementY}`)
             } else {
                 // console.log(`MOVE ${e.movementX}:${e.movementY}`)

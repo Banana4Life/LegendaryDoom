@@ -101,19 +101,23 @@ function loadTexture(gl) {
 }
 
 class Renderer {
-    shaders
-    canvas
-    webgl
+    shaders: {program: any, attribute: {}, uniform: {}}[]
+    canvas: HTMLCanvasElement
+    webgl: WebGLRenderingContext
     buffers
     textures
-    camera
-    triangleCount
+    camera: Transform
+    triangleCount: number
 
-    mapLoaded = false
+    mapLoaded: boolean = false
 
     readonly fov = 90 * Math.PI / 180
     readonly near = 0.1
     readonly far = 100000
+
+    constructor(cameraTransform: Transform) {
+        this.camera = cameraTransform
+    }
 
     initRenderer() {
         this.canvas = document.querySelector("canvas")
@@ -148,9 +152,6 @@ class Renderer {
         this.textures = {
             atlas: loadTexture(gl)
         }
-
-        this.camera = new Transform()
-        this.camera.setTranslation(0, 0, -6)
 
         return Promise.all(shaders).then(shaders => {
             this.shaders = shaders
@@ -280,10 +281,10 @@ class Renderer {
     render(dt) {
         let gl = this.webgl
 
-        const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
+        const aspect = this.canvas.clientWidth / this.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.camera.rotate(0, deg2rad(.5), 0)
+        this.camera.rotate(0, 0, 0)
 
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
