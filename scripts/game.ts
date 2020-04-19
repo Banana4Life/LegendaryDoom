@@ -12,6 +12,7 @@ class Game {
     }
 
     togglePause() {
+        game.audio.toggleMusic()
         game.paused = !game.paused
         console.log("Paused? " + game.paused)
         document.querySelectorAll(".paused").forEach(e => {
@@ -66,7 +67,7 @@ class Game {
         }
         if (this.controls.buttonPressed(this.controls.buttons.MIDDLE)) {
             game.audio.playWadSound("OOF", 0.2)
-            this.audio.playMusic()
+            this.audio.playMusic("D_E1M1")
         }
         if (this.controls.keyPressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!"

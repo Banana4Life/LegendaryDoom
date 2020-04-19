@@ -66,12 +66,25 @@ class AudioManager {
     musicCache = {}
 
     playing = false
-    playMusic(name) {
-        name = "D_E1M1"
-        if (this.playing) {
-            return
-        }
+    paused = false
 
+    toggleMusic() {
+        if (this.playing) {
+            if (this.paused) {
+                // @ts-ignore
+                MIDI.Player.resume();
+                console.log("resumed music")
+                this.paused = false
+            } else {
+                // @ts-ignore
+                MIDI.Player.pause();
+                console.log("paused music")
+                this.paused = true
+            }
+        }
+    }
+
+    playMusic(name) {
         if (!this.musicCache[name]) {
             this.musicCache[name] = this.getMidiFromMus(name)
         }
