@@ -158,6 +158,19 @@ class Renderer {
     }
 
     loadMap(map) {
+        let textureCoordLookup = [
+            [0  ,0,  0  ,1,  .25,0,  .25,1],
+            [.25,0,  .25,1,  .5 ,0,  .5 ,1],
+            [.5 ,0,  .5 ,1,  .75,0,  .75,1],
+            [.75,0,  .75,1,  1  ,0,  1  ,1]
+        ]
+        let textureBoundaryLookup = [
+            [0  , 0, .25, 1],
+            [.25, 0, .25, 1],
+            [.5 , 0, .25, 1],
+            [.75, 0, .25, 1]
+        ]
+
         let vertices = []
         let triangles = []
         let textureCoords = []
@@ -165,83 +178,22 @@ class Renderer {
         let textureTiling = []
         let ti = 0
 
-        for (let sectorIndex = 0; sectorIndex < map.sectors.length; sectorIndex++) {
-            // load sector
-            let sector = {
-                sector: map.sectors[sectorIndex],
-                sideDefs: {},
-                lineDefs: {},
-                vertices: {}
-            }
-            for (let i = 0; i < map.sideDefs.length; i++) {
-                let sideDef = map.sideDefs[i]
-                if (sideDef.sectorIndex == sectorIndex) {
-                    sector.sideDefs[i] = {sideDef: sideDef}
-                }
-            }
-            for (let i = 0; i < map.lineDefs.length; i++) {
-                let lineDef = map.lineDefs[i]
-                if (lineDef.rightSideDefIndex in sector.sideDefs) {
-                    sector.sideDefs[lineDef.rightSideDefIndex].left = false
-                    sector.sideDefs[lineDef.rightSideDefIndex].lineDefIndex = i
-                    sector.lineDefs[i] = lineDef
-                } else if (lineDef.leftSideDefIndex in sector.sideDefs) {
-                    sector.sideDefs[lineDef.leftSideDefIndex].left = true
-                    sector.sideDefs[lineDef.leftSideDefIndex].lineDefIndex = i
-                    sector.lineDefs[i] = lineDef
-                }
-            }
-            for (let lineDefIndex of Object.keys(sector.lineDefs)) {
-                let lineDef = sector.lineDefs[lineDefIndex]
-                sector.vertices[lineDef.startVertexIndex] = map.vertexes[lineDef.startVertexIndex]
-                sector.vertices[lineDef.endVertexIndex] = map.vertexes[lineDef.endVertexIndex]
-            }
+        function loadSideDef(sideDef, startVertex, endVertex, sector, twoSided, otherSector) {
+            let floorHeight = sector.floorHeight
+            let ceilHeight = sector.ceilingHeight
 
-            console.log(sector)
+            function addQuad(left, right, top, bottom) {
+                let prevVertexCount = vertices.length / 3
 
-            // add sector to buffers
-            let floorHeight = sector.sector.floorHeight
-            let ceilHeight = sector.sector.ceilingHeight
-            for (let sideDefIndex of Object.keys(sector.sideDefs)) {
-                if (!("left" in sector.sideDefs[sideDefIndex])) {
-                    continue;
-                }
-                let left = sector.sideDefs[sideDefIndex].left
-                let lineDef = sector.lineDefs[sector.sideDefs[sideDefIndex].lineDefIndex]
-
-                let startVertex = sector.vertices[lineDef.startVertexIndex]
-                let endVertex = sector.vertices[lineDef.endVertexIndex]
-                if (left) {
-                    let a = startVertex
-                    startVertex = endVertex
-                    endVertex = a
-                }
-
-                let vertexCount = vertices.length / 3
-
-                vertices = vertices.concat([startVertex[0], ceilHeight, startVertex[1]])  // top-left
-                vertices = vertices.concat([startVertex[0], floorHeight, startVertex[1]]) // bottom-left
-                vertices = vertices.concat([endVertex[0], ceilHeight, endVertex[1]])      // top-right
-                vertices = vertices.concat([endVertex[0], floorHeight, endVertex[1]])     // bottom-right
+                vertices = vertices.concat([left[0], top, left[1]])
+                vertices = vertices.concat([left[0], bottom, left[1]])
+                vertices = vertices.concat([right[0], top, right[1]])
+                vertices = vertices.concat([right[0], bottom, right[1]])
 
                 let triangleOffsets = [0, 1, 2, 1, 2, 3]
-                for (let i = 0; i < triangleOffsets.length; i++) {
-                    let triangleOffset = triangleOffsets[i]
-                    triangles.push(vertexCount + triangleOffset)
+                for (let triangleOffset of triangleOffsets) {
+                    triangles.push(prevVertexCount + triangleOffset)
                 }
-
-                let textureCoordLookup = [
-                    [0  ,0,  0  ,1,  .25,0,  .25,1],
-                    [.25,0,  .25,1,  .5 ,0,  .5 ,1],
-                    [.5 ,0,  .5 ,1,  .75,0,  .75,1],
-                    [.75,0,  .75,1,  1  ,0,  1  ,1]
-                ]
-                let textureBoundaryLookup = [
-                    [0  , 0, .25, 1],
-                    [.25, 0, .25, 1],
-                    [.5 , 0, .25, 1],
-                    [.75, 0, .25, 1]
-                ]
 
                 textureCoords = textureCoords.concat(textureCoordLookup[ti % 4])
                 for (let v = 0; v < 4; v++) {
@@ -249,6 +201,53 @@ class Renderer {
                     textureTiling = textureTiling.concat([2, 1])
                 }
                 ti++
+            }
+
+            if (sideDef.middleTexture != null) {
+                addQuad(startVertex, endVertex, ceilHeight, floorHeight)
+            }
+
+            if (twoSided) {
+                let otherCeilHeight = otherSector.ceilingHeight
+                let otherFloorHeight = otherSector.floorHeight
+                if (ceilHeight > otherCeilHeight) {
+                    addQuad(startVertex, endVertex, ceilHeight, otherCeilHeight)
+                }
+                if (floorHeight < otherFloorHeight) {
+                    addQuad(startVertex, endVertex, otherFloorHeight, floorHeight)
+                }
+            }
+        }
+
+        for (let lineDef of map.lineDefs) {
+            let startVertex = map.vertexes[lineDef.startVertexIndex]
+            let endVertex = map.vertexes[lineDef.endVertexIndex]
+
+            let twoSided = (lineDef.flags & 4) > 0
+
+            let right = false
+            let rightSideDef
+            let rightSector
+            if (lineDef.rightSideDefIndex > -1) {
+                right = true
+                rightSideDef = map.sideDefs[lineDef.rightSideDefIndex]
+                rightSector = map.sectors[rightSideDef.sectorIndex]
+            }
+
+            let left = false
+            let leftSideDef
+            let leftSector
+            if (lineDef.leftSideDefIndex > -1) {
+                left = true
+                leftSideDef = map.sideDefs[lineDef.leftSideDefIndex]
+                leftSector = map.sectors[leftSideDef.sectorIndex]
+            }
+
+            if (right) {
+                loadSideDef(rightSideDef, startVertex, endVertex, rightSector, twoSided, leftSector)
+            }
+            if (left) {
+                loadSideDef(leftSideDef, endVertex, startVertex, leftSector, twoSided, rightSector)
             }
         }
 
@@ -273,8 +272,7 @@ class Renderer {
         let x = map.things[0].x
         let y = map.things[0].y
         //this.camera.setTranslation(-x, -41, -y)
-        this.camera.setTranslation(-x, -200, -y)
-        this.camera.setRotation(0, deg2rad(90), 0)
+        this.camera.setTranslation(-x, -400, -y + 200)
 
         this.mapLoaded = true
     }
@@ -285,7 +283,7 @@ class Renderer {
         const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight
         const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
-        this.camera.translate(0, 0, 1)
+        this.camera.rotate(0, deg2rad(.5), 0)
 
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
