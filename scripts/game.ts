@@ -60,7 +60,7 @@ class Game {
 
         let playerThing = this.doomGame.maps[0].things[0]
         this.cameraTransform.setTranslation(-playerThing.y, -41, -playerThing.x)
-        this.cameraTransform.setRotation(0, deg2rad(90), 0)
+        this.cameraTransform.setRotation(0, deg2rad(playerThing.angle), 0)
 
         return this.renderer.initRenderer()
             .then(this.startLoop.bind(this))
