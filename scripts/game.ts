@@ -270,11 +270,11 @@ class Game {
             if (!(thing.mobj.flags & (MF_SOLID | MF_SPECIAL | MF_SHOOTABLE))) {
                 return true
             }
-            let blockdist = thing.mobj.radius + tmthing.mobj.radius
+            let blockdist = (thing.mobj.radius >> FRACBITS) + (tmthing.mobj.radius >> FRACBITS)
 
-            let [x1,y2,z3] = thing.getPosition()
-            let thingx = -z
-            let thingy = -x
+            let [x1,y1,z1] = thing.getPosition()
+            let thingx = -z1
+            let thingy = -x1
             if (Math.abs(thingx - tmthingX) >= blockdist
                 || Math.abs(thingy -tmthingY) >= blockdist) {
                 return true // didn't hit it
@@ -341,6 +341,7 @@ class Game {
                     // can remove thing
                     // TODO
                     // P_TouchSpecialThing (thing, tmthing);
+                    console.log(`Pickup ${thing.mobj.doomednum}`)
                 }
                 return !solid
             }
