@@ -91,7 +91,7 @@ window.addEventListener('DOMContentLoaded', main)
 
 
 function logToGameConsole(message: string) {
-    let textArea = document.querySelector("#console textarea")
+    let textArea = document.querySelector<HTMLTextAreaElement>("#console textarea")
     textArea.value += message;
     textArea.value += "\n";
     textArea.scrollTop = textArea.scrollHeight

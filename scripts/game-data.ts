@@ -35,6 +35,10 @@ class DoomGame {
         return DoomGame.parseLumpAs(this.wad, name, DoomMusic.parse)
     }
 
+    getSpriteSet(prefix: string): DoomSpriteSet | null {
+        return DoomSpriteSet.parse(this.wad.dictionary, prefix)
+    }
+
     static findLumpIndex(dict: WADDictionary, name: string): number {
         let upper = name.toUpperCase()
         for (let i = dict.length - 1; i >= 0; --i) {
@@ -1000,5 +1004,64 @@ class DoomTexturePatch {
         let patchIndex = readU16LE(buf, offset + 4)
         // 2 more fields, which are not used/known: stepdir, colormap
         return new DoomTexturePatch(offsetX, offsetY, patches.getPatch(patchIndex))
+    }
+}
+
+class DoomSpriteSet {
+    readonly prefix: string
+    readonly billboardSet: DoomPicture[]
+    readonly orientationSets: DoomPicture[][]
+
+    constructor(prefix: string, billboardSet: DoomPicture[], orientations: DoomPicture[][]) {
+        this.prefix = prefix
+        this.billboardSet = billboardSet
+        this.orientationSets = orientations
+    }
+
+    static parse(dict: WADDictionary, prefix: string): DoomSpriteSet | null {
+
+        function framesAndOrientations(name: string): [number, number][] {
+            let codeA = "A".charCodeAt(0)
+            let configs: [number, number][] = []
+            let offset = 4
+            while (offset <= name.length) {
+                let frame = name.charCodeAt(offset) - codeA
+                let orientation = parseInt(name.charAt(offset + 1))
+                configs.push([frame, orientation])
+                offset += 2
+            }
+            return configs
+        }
+
+        let billboardSet: DoomPicture[] = []
+        let orientationSets: DoomPicture[][] = []
+
+        for (let lump of dict) {
+            if (!lump.name.startsWith(prefix)) {
+                continue
+            }
+
+            let result = framesAndOrientations(lump.name);
+            if (result.length > 0) {
+                let picture = DoomPicture.fromPatch(lump.name, lump.data)
+
+                for (let [frame, orientation] of result) {
+                    if (orientation === 0) {
+                        billboardSet[frame] = picture
+                    } else {
+                        let orientationIndex = orientation - 1;
+                        let orientationSet = orientationSets[orientationIndex]
+                        if (!Array.isArray(orientationSet)) {
+                            orientationSet = []
+                            orientationSets[orientationIndex] = orientationSet
+                        }
+                        orientationSet[frame] = picture
+                    }
+                }
+            }
+
+        }
+
+        return new DoomSpriteSet(prefix, billboardSet, orientationSets)
     }
 }
