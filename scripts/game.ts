@@ -122,6 +122,8 @@ class Game {
             this.cameraPitch = deg2rad(45)
         }
 
+        let oldPos = this.cameraTransform.getPosition()
+
         this.cameraTransform.moveForward(dx * dt, dy * dt, dz * dt)
         this.cameraTransform.setEulerAngles(0, this.cameraPitch, this.cameraYaw)
 
@@ -129,6 +131,13 @@ class Game {
 
         let targetHeight = this.getHeight(-z, -x)
         this.cameraTransform.moveForward(0,(-targetHeight - y -41) * dt * 20,0)
+
+        let newPos = this.cameraTransform.getPosition()
+
+        let map = this.doomGame.maps[0]
+        if (!this.checkCollide(map, map.things[0], this.cameraTransform, oldPos, newPos)) {
+            // console.log("Collide")
+        }
 
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
             // game.audio.play(Sound.PISTOL, 0.2)
@@ -168,5 +177,388 @@ class Game {
             transform.setEulerAngles(0, 0, deg2rad(thing.angle))
             this.renderer.addThing(transform)
         }
+    }
+
+    FRACBITS = 16
+    FRACUNIT =(1<< this.FRACBITS)
+    MAXRADIUS = 32 * this.FRACUNIT
+    MAPBLOCKSHIFT = this.FRACBITS + 7
+
+    private checkCollide(map: DoomMap, tmthing: DoomThing, transform: Transform, oldPos: [number, number, number], newPos: [number, number, number]) {
+
+        let blockMapOriginX = map.blockMap.originX << this.FRACBITS
+        let blockMapOriginY = map.blockMap.originY << this.FRACBITS
+
+        function forEachLine(x,y,func) {
+            if (x < 0 || y < 0 || x >= map.blockMap.columnCount || y >= map.blockMap.rowCount) {
+                return true;
+            }
+            let offset = y * map.blockMap.columnCount +x
+
+            for (let lineIdx = offset; ; lineIdx++) {
+                let lineDef = map.lineDefs[lineIdx]
+
+                if (!func(lineDef)) {
+                    return false
+                }
+            }
+            return true // everything was checked
+        }
+
+        function forEachThing(x,y,func) {
+            let blockPosSearch = y * map.blockMap.columnCount + x
+            for (const thing1 of map.things) {
+
+                let blockx = (tmthing.x - blockMapOriginX) >> MAPBLOCKSHIFT
+                let blocky = (tmthing.y - blockMapOriginY) >> MAPBLOCKSHIFT
+
+                let blockPos = blocky * map.blockMap.columnCount + blockx
+
+                if (blockPosSearch === blockPos) {
+                    if (!func( thing1 ) ) {
+                        console.log(`Collided with thing at ${thing1.x}:${thing1.y}`)
+                        return false
+                    }
+                }
+            }
+            return true
+        }
+
+        let [nx,ny,nz] = newPos
+        let tx = -nz
+        let ty = -nx
+        let radius = this.doomGame.modj[tmthing.type].radius
+
+        let tmboxTop = ty + radius
+        let tmboxBottom = ty - radius
+        let tmboxRight = tx + radius
+        let tmboxLeft = tx - radius
+
+        let tmfloor = ny
+        let tmdropoff = ny
+        let tmCeiling = map.getSectorAt(tx, ty).ceilingHeight
+
+        let ceilingline
+
+        let modjs = this.doomGame.modj
+
+        let xl = (tmboxLeft - blockMapOriginX - this.MAXRADIUS) >> this.MAPBLOCKSHIFT
+        let xh = (tmboxRight - blockMapOriginX + this.MAXRADIUS) >> this.MAPBLOCKSHIFT
+        let yl = (tmboxBottom - blockMapOriginY - this.MAXRADIUS) >> this.MAPBLOCKSHIFT
+        let yh = (tmboxTop - blockMapOriginY + this.MAXRADIUS) >> this.MAPBLOCKSHIFT
+
+        function PIT_CheckThing(thing: DoomThing) {
+            let thingmodj = modjs[thing.type]
+            let tmthingmodj = modjs[tmthing.type]
+
+            if (!(thingmodj.flags & (MF_SOLID | MF_SPECIAL | MF_SHOOTABLE))) {
+                return true
+            }
+            let blockdist = thingmodj.radius + tmthingmodj.radius
+
+            if (Math.abs(thing.x - tmthing.x) >= blockdist
+                || Math.abs(thing.y - tmthing.y) >= blockdist) {
+                return true // didn't hit it
+            }
+            if (tmthing === thing) {
+                return true
+            }
+
+            if (tmthingmodj.flags & MF_SKULLFLY) {
+                // TODO
+                // damage = ((P_Random()%8)+1)*tmthing->info->damage;
+                //
+                // P_DamageMobj (thing, tmthing, tmthing, damage);
+                //
+                // tmthing->flags &= ~MF_SKULLFLY;
+                // tmthing->momx = tmthing->momy = tmthing->momz = 0;
+                //
+                // P_SetMobjState (tmthing, tmthing->info->spawnstate);
+                return false		// stop moving
+            }
+            // missiles can hit other things
+            if (tmthingmodj.flags & MF_MISSILE) {
+                // TODO
+                // see if it went over / under
+                // if (tmthing.z > thing.z + thingmodj.height)
+                // return true;		// overhead
+                // if (tmthing.z+tmthingmodj.height < thing.z)
+                // return true;		// underneath
+
+                // if (tmthing->target && (
+                //     tmthing->target->type == thing->type ||
+                //  (tmthing->target->type == MT_KNIGHT && thing->type == MT_BRUISER)||
+                //  (tmthing->target->type == MT_BRUISER && thing->type == MT_KNIGHT) ) ) {
+                //     // Don't hit same species as originator.
+                //     if (thing == tmthing->target)
+                //     return true;
+                //
+                //     if (thing->type != MT_PLAYER)
+                //     {
+                //         // Explode, but do no damage.
+                //         // Let players missile other players.
+                //         return false;
+                //     }
+                // }
+
+                if (!(thingmodj.flags & MF_SHOOTABLE)) {
+                    // didn't do any damage
+                    return !(thingmodj.flags & MF_SOLID)
+                }
+
+                // damage / explode
+                // TODO
+                // damage = ((P_Random()%8)+1)*tmthing->info->damage;
+                // P_DamageMobj (thing, tmthing, tmthing->target, damage);
+
+                // don't traverse any more
+                return false
+            }
+
+            // check for special pickup
+            if (thingmodj.flags & MF_SPECIAL) {
+                let solid = thingmodj.flags & MF_SOLID
+                if (tmthingmodj.flags & MF_PICKUP) {
+                    // can remove thing
+                    // TODO
+                    // P_TouchSpecialThing (thing, tmthing);
+                }
+                return !solid
+            }
+
+            return !(thingmodj.flags & MF_SOLID)
+        }
+
+        for (let bx=xl ; bx<=xh ; bx++)
+            for (let by=yl ; by<=yh ; by++)
+                if (!forEachThing(bx,by,PIT_CheckThing))
+                    return false;
+
+        // check lines
+        xl = (tmboxLeft - blockMapOriginX)>>MAPBLOCKSHIFT;
+        xh = (tmboxRight - blockMapOriginX)>>MAPBLOCKSHIFT;
+        yl = (tmboxBottom - blockMapOriginY)>>MAPBLOCKSHIFT;
+
+        function PIT_CheckLine(linedef: DoomLineDef) {
+            // TODO not sure
+            let leftSide = map.sideDefs[linedef.leftSideDefIndex]
+            let rightSide = map.sideDefs[linedef.rightSideDefIndex]
+
+            let boxLeft, boxRight, boxTop, boxBottom
+            if (leftSide.offsetX < rightSide.offsetX) {
+                boxLeft = leftSide.offsetX;
+                boxRight = rightSide.offsetX
+            } else {
+                boxLeft = rightSide.offsetX;
+                boxRight = leftSide.offsetX
+            }
+            if (leftSide.offsetY < rightSide.offsetY)
+            {
+                boxBottom = leftSide.offsetY
+                boxTop = rightSide.offsetY
+            }
+            else
+            {
+                boxBottom = rightSide.offsetY
+                boxTop = leftSide.offsetY
+            }
+
+            if(tmboxRight >= boxLeft
+                || tmboxLeft >= boxRight
+                || tmboxTop <= boxBottom
+                || tmboxBottom >= boxTop) {
+                return true
+            }
+
+            function P_BoxOnLineSide(boxleft, boxRight, boxTop, boxBottom, lineDef: DoomLineDef) {
+
+                let v1 = map.sideDefs[lineDef.leftSideDefIndex]
+                let v2 = map.sideDefs[lineDef.rightSideDefIndex]
+                let lddx = v2.offsetX - v1.offsetX
+                let lddy = v2.offsetY - v1.offsetY
+                let slopetype
+
+                if (!lddx)
+                    slopetype = "ST_VERTICAL"
+                else if (!lddy)
+                    slopetype = "ST_HORIZONTAL"
+                else if (lddy / lddx > 0)
+                    slopetype = "ST_POSITIVE"
+                else
+                    slopetype = "ST_NEGATIVE"
+
+                function P_PointOnLineSide(x,y, line: DoomLineDef, lddx, lddy, v1) {
+                    if (!lddx)
+                    {
+                        if (x <= v1.offsetX)
+                            return lddy > 0;
+
+                        return lddy < 0;
+                    }
+                    if (!lddy)
+                    {
+                        if (y <= v1.offsetY)
+                            return lddx < 0;
+
+                        return lddy> 0;
+                    }
+
+                    let dx = (x - v1.offsetX);
+                    let dy = (y - v1.offsetY);
+
+                    let left = ((lddy >> FRACBITS) * dx) >> FRACBITS;
+                    let right = (dy * (lddy >> FRACBITS)) >> FRACBITS;
+
+                    if (right < left)
+                        return 0;		// front side
+                    return 1;			// back side
+                }
+
+                let p1, p2
+                switch (slopetype)
+                {
+                    case "ST_HORIZONTAL":
+                        p1 = tmboxTop > v1.offsetY;
+                        p2 = tmboxBottom > v1.offsetY;
+                        if (lddx < 0)
+                        {
+                            p1 ^= 1;
+                            p2 ^= 1;
+                        }
+                        break;
+
+                    case "ST_VERTICAL":
+                        p1 = tmboxRight< v1.offsetX;
+                        p2 = tmboxLeft < v1.offsetX;
+                        if (lddy < 0)
+                        {
+                            p1 ^= 1;
+                            p2 ^= 1;
+                        }
+                        break;
+
+                    case "ST_POSITIVE":
+                        p1 = P_PointOnLineSide (tmboxLeft, tmboxTop, lineDef, lddx, lddy, v1);
+                        p2 = P_PointOnLineSide (tmboxRight, tmboxBottom, lineDef, lddx, lddy, v1);
+                        break;
+
+                    case "ST_NEGATIVE":
+                        p1 = P_PointOnLineSide (tmboxRight, tmboxTop, lineDef, lddx, lddy, v1);
+                        p2 = P_PointOnLineSide (tmboxLeft, tmboxBottom, lineDef, lddx, lddy, v1);
+                        break;
+                }
+
+                if (p1 == p2)
+                    return p1;
+                return -1;
+            }
+
+            if (P_BoxOnLineSide (tmboxLeft, tmboxRight, tmboxTop, tmboxBottom, linedef) != -1)
+                return true;
+
+            // A line has been hit
+
+            // The moving thing's destination position will cross
+            // the given line.
+            // If this should not be allowed, return false.
+            // If the line is special, keep track of it
+            // to process later if the move is proven ok.
+            // NOTE: specials are NOT sorted by order,
+            // so two special lines that are only 8 pixels apart
+            // could be crossed in either order.
+            const ML_BLOCKING = 1
+            const ML_BLOCKMONSTERS = 2
+
+            let backsector
+            if (linedef.rightSideDefIndex !== -1) {
+                backsector = map.sideDefs[linedef.rightSideDefIndex].sectorIndex
+            } else {
+                backsector = 0
+            }
+            let frontsector
+            if (linedef.leftSideDefIndex != -1) {
+                frontsector = map.sideDefs[linedef.leftSideDefIndex].sectorIndex
+            } else {
+                frontsector = 0
+            }
+
+            if (!backsector)
+                return false;		// one sided line
+            if (!(modjs[tmthing.type].flags & MF_MISSILE) )
+            {
+                if (linedef.flags & ML_BLOCKING) {
+                    return false; 	// explicitly blocking everything
+                }
+                if ( tmthing.type !== 1 && linedef.flags & ML_BLOCKMONSTERS )
+                    return false;	// block monsters only
+            }
+
+            function P_LineOpening(ld) {
+                let openrange
+                let opentop
+                let openbottom
+                let lowfloor
+                if (ld.rightSideDefIndex === -1) {
+                    // single sided line
+                    openrange = 0
+                    return
+                }
+
+                let frontCeiling = map.sectors[frontsector].ceilingHeight
+                let frontFloor = map.sectors[frontsector].floorHeight
+                let backCeiling = map.sectors[backsector].ceilingHeight
+                let backFloor = map.sectors[backsector].floorHeight
+
+                if (frontCeiling < backCeiling)
+                    opentop = frontCeiling
+                else
+                    opentop = backCeiling
+
+                if (frontFloor > backFloor) {
+                    openbottom = frontFloor
+                    lowfloor = backFloor
+                } else {
+                    openbottom = backFloor
+                    lowfloor = frontFloor
+                }
+
+                openrange = opentop - openbottom
+                return [opentop, openbottom, lowfloor]
+            }
+
+            // set openrange, opentop, openbottom
+            let [opentop, openbottom, lowfloor] = P_LineOpening (linedef);
+
+            // adjust floor / ceiling heights
+            if (opentop < tmCeiling)
+            {
+                tmCeiling = opentop;
+                ceilingline = linedef;
+            }
+
+            if (openbottom > tmfloor)
+                tmfloor = openbottom;
+
+            if (lowfloor < tmdropoff)
+                tmdropoff = lowfloor;
+
+            // if contacted a special line, add it to the list
+            if (linedef.specialType)
+            {
+                // TODO
+                // spechit[numspechit] = ld;
+                // numspechit++;
+            }
+            return true;
+        }
+
+        yh = (tmboxTop - blockMapOriginY)>>MAPBLOCKSHIFT;
+
+        for (let bx=xl ; bx<=xh ; bx++)
+            for (let by=yl ; by<=yh ; by++)
+                if (!forEachLine (bx,by,PIT_CheckLine))
+                    return false;
+
+        return true
     }
 }

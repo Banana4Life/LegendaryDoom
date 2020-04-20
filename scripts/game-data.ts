@@ -7,6 +7,8 @@ class DoomGame {
     readonly textures: DoomTextureMap
     readonly maps: DoomMap[]
 
+    readonly modj = mobjinfos
+
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 
     constructor(wad: WAD, colorMap: DoomColorMap[], colorPalette: DoomPalette[], patches: DoomPatchMap, flats: DoomFlatFolder, textures: DoomTextureMap, maps: DoomMap[]) {
@@ -188,6 +190,7 @@ class DoomGame {
         console.info(`Number of textures loaded: ${this.textures.getSize()}`)
         console.info(`Number of maps loaded: ${this.maps.length}`)
     }
+
 }
 
 type DoomMapName = { episode: number, map: number } | { level: number }

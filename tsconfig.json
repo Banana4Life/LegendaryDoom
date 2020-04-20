@@ -1,6 +1,7 @@
 {
   "files": [
     "scripts/wad.ts",
+    "scripts/cgame-data.ts",
     "scripts/game-data.ts",
     "scripts/controls.ts",
     "scripts/math.ts",
