@@ -6,13 +6,11 @@ class Game {
     paused: boolean
     private readonly cameraTransform: Transform
     private cameraPitch: number
-    private cameraYaw: number
 
 
     constructor(gameData: DoomGame) {
         this.cameraTransform = new Transform()
         this.cameraPitch = 0
-        this.cameraYaw = 0
 
         this.controls = new Controls()
         this.renderer = new Renderer(this.cameraTransform)
@@ -70,7 +68,7 @@ class Game {
 
         let playerThing = this.doomGame.maps[0].things[0]
         this.cameraTransform.setPosition(-playerThing.y, -41, -playerThing.x)
-        this.cameraYaw = deg2rad(playerThing.angle)
+        this.renderer.cameraYaw = deg2rad(playerThing.angle)
         this.cameraTransform.thing = playerThing
         this.cameraTransform.mobj = this.doomGame.mobj[playerThing.type]
 
@@ -105,19 +103,19 @@ class Game {
         if (this.controls.keyPressed(this.controls.keys.MOVE_RIGHT)) {
             dx += -speed
         }
-        if (this.controls.keyPressed(this.controls.keys.MOVE_UP)) {
-            dy += -speed
-        }
-        if (this.controls.keyPressed(this.controls.keys.MOVE_DOWN)) {
-            dy += speed
-        }
+        // if (this.controls.keyPressed(this.controls.keys.MOVE_UP)) {
+        //     dy += -speed
+        // }
+        // if (this.controls.keyPressed(this.controls.keys.MOVE_DOWN)) {
+        //     dy += speed
+        // }
 
         let [dyaw, dpitch] = this.controls.getMouseChange()
 
 
         // this.cameraPitch += deg2rad(this.multi * 90 * dt) // Bob
         this.cameraPitch += deg2rad(dpitch * dt * 2)
-        this.cameraYaw += deg2rad(dyaw * dt * 2)
+        this.renderer.cameraYaw += deg2rad(dyaw * dt * 2)
         if (this.cameraPitch < deg2rad(-45)) {
             this.cameraPitch = deg2rad(-45)
         }if (this.cameraPitch > deg2rad(45)) {
@@ -127,7 +125,7 @@ class Game {
         let oldPos = this.cameraTransform.getPosition()
 
         this.cameraTransform.moveForward(dx * dt, dy * dt, dz * dt)
-        this.cameraTransform.setEulerAngles(0, this.cameraPitch, this.cameraYaw)
+        this.cameraTransform.setEulerAngles(0, this.cameraPitch, this.renderer.cameraYaw)
 
         let [x,y,z] = this.cameraTransform.getPosition()
 

@@ -83,6 +83,7 @@ class Renderer {
     colorMapCount
     palettesTexture: WebGLTexture
     camera: Transform
+    cameraYaw: number
     triangleCount: number
 
     mapLoaded: boolean = false
@@ -434,7 +435,9 @@ class Renderer {
     private renderSky(gl: WebGL2RenderingContext) {
         let sky = 0
 
-        let rf = 0 / (360 / 4)
+
+        let rf = this.cameraYaw / (Math.PI / 2)
+
 
         let heightPart = 0.5
         let lowerEnd = 1 - 2 * heightPart
