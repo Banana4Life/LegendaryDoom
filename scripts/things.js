@@ -1,0 +1,168 @@
+var Transform = /** @class */ (function () {
+    function Transform() {
+        this.scaleX = 1;
+        this.scaleY = 1;
+        this.scaleZ = 1;
+        this.rotW = 0;
+        this.rotX = 0;
+        this.rotY = 0;
+        this.rotZ = 0;
+        this.posX = 0;
+        this.posY = 0;
+        this.posZ = 0;
+        this.baseRotation = [1, 0, 0, 0];
+        this.setPosition(0, 0, 0);
+        this.setScale(1, 1, 1);
+        this.setAngleAxis(0, 0, 0, 0);
+        this.dirty = true;
+        this.transform = mat4.identity;
+    }
+    Transform.prototype.set = function (otherTransform) {
+        this.setPosition(otherTransform.getPosition());
+        this.setScale(otherTransform.getScale());
+        this.setRotationQuaternion(otherTransform.getRotationQuaternion());
+    };
+    Transform.prototype.setPosition = function (x, y, z) {
+        var _a;
+        if (y === void 0) { y = undefined; }
+        if (z === void 0) { z = undefined; }
+        if (Array.isArray(x)) {
+            _a = x, x = _a[0], y = _a[1], z = _a[2];
+        }
+        this.posX = x;
+        this.posY = y;
+        this.posZ = z;
+        this.translation = mat4.translation(x, y, z);
+        this.dirty = true;
+    };
+    Transform.prototype.getPosition = function () {
+        return [this.posX, this.posY, this.posZ];
+    };
+    Transform.prototype.move = function (x, y, z) {
+        var _a;
+        if (z === void 0) { z = 0; }
+        if (Array.isArray(x)) {
+            _a = x, x = _a[0], y = _a[1], z = _a[2];
+        }
+        this.setPosition(this.posX + x, this.posY + y, this.posZ + z);
+    };
+    Transform.prototype.moveForward = function (x, y, z) {
+        var _a = mat4.multiplyV4(this.rotation, [x, 0, z, 0]), x2 = _a[0], z2 = _a[2];
+        this.move(x2, 0, z2);
+        var _b = mat4.multiplyV4(this.rotation, [0, y, 0, 0]), y2 = _b[1];
+        this.move(0, y2, 0);
+    };
+    Transform.prototype.setScale = function (x, y, z) {
+        var _a;
+        if (y === void 0) { y = x; }
+        if (z === void 0) { z = x; }
+        if (Array.isArray(x)) {
+            _a = x, x = _a[0], y = _a[1], z = _a[2];
+        }
+        this.scaleX = x;
+        this.scaleY = y;
+        this.scaleZ = z;
+        this.scale = mat4.scale(x, y, z);
+        this.dirty = true;
+    };
+    Transform.prototype.getScale = function () {
+        return [this.scaleX, this.scaleY, this.scaleZ];
+    };
+    Transform.prototype.setRotationQuaternion = function (w, x, y, z) {
+        var _a;
+        if (x === void 0) { x = undefined; }
+        if (y === void 0) { y = undefined; }
+        if (z === void 0) { z = undefined; }
+        if (Array.isArray(w)) {
+            _a = w, w = _a[0], x = _a[1], y = _a[2], z = _a[3];
+        }
+        this.rotW = w;
+        this.rotX = x;
+        this.rotY = y;
+        this.rotZ = z;
+        this.rotation = mat4.rotation(mat4.multiplyQuaternions(this.baseRotation, this.getRotationQuaternion()));
+        this.dirty = true;
+    };
+    Transform.prototype.getRotationQuaternion = function () {
+        return [this.rotW, this.rotX, this.rotY, this.rotZ];
+    };
+    Transform.prototype.setAngleAxis = function (angle, x, y, z) {
+        var halfAngle = angle / 2.0;
+        var s = Math.sin(halfAngle);
+        this.setRotationQuaternion(Math.cos(halfAngle), x * s, y * s, z * s);
+    };
+    Transform.prototype.angleAxisQuat = function (angle, x, y, z) {
+        var halfAngle = angle / 2.0;
+        var s = Math.sin(halfAngle);
+        return [Math.cos(halfAngle), x * s, y * s, z * s];
+    };
+    Transform.prototype.getAngleAxis = function () {
+        var angle = 2.0 * Math.acos(this.rotW);
+        if (angle === 0) {
+            return [0, 0, 1, 0];
+        }
+        var s = Math.sqrt(1.0 - this.rotW * this.rotW);
+        var x = this.rotX / s;
+        var y = this.rotY / s;
+        var z = this.rotZ / s;
+        return [angle, x, y, z];
+    };
+    Transform.prototype.setEulerAngles = function (roll, pitch, yaw) {
+        var _a;
+        if (Array.isArray(roll)) {
+            _a = roll, roll = _a[0], pitch = _a[1], yaw = _a[2];
+        }
+        var q1 = this.angleAxisQuat(pitch, 1, 0, 0);
+        var q2 = this.angleAxisQuat(yaw, 0, 1, 0);
+        var q3 = this.angleAxisQuat(roll, 0, 0, -1);
+        var newQuat = mat4.multiplyQuaternions(this.baseRotation, mat4.multiplyQuaternions(mat4.multiplyQuaternions(q1, q2), q3));
+        this.setRotationQuaternion(newQuat);
+        // const cr = Math.cos(roll * 0.5);
+        // const sr = Math.sin(roll * 0.5);
+        // const cp = Math.cos(pitch * 0.5);
+        // const sp = Math.sin(pitch * 0.5);
+        // const cy = Math.cos(yaw * 0.5);
+        // const sy = Math.sin(yaw * 0.5);
+        //
+        // let rotQuat = [cr * cp * cy + sr * sp * sy,
+        //                sr * cp * cy - cr * sp * sy,
+        //                sr * cp * sy + cr * sp * cy,
+        //                cr * cp * sy - sr * sp * cy]
+        //
+        // newQuat = mat4.multiplyQuaternions(this.baseRotation, rotQuat)
+    };
+    Transform.prototype.getEulerAngles = function () {
+        var sinr_cosp = 2.0 * (this.rotW * this.rotX + this.rotY * this.rotZ);
+        var cosr_cosp = 1.0 - 2.0 * (this.rotX * this.rotX + this.rotY * this.rotY);
+        var roll = Math.atan2(sinr_cosp, cosr_cosp);
+        var sinp = +2.0 * (this.rotW * this.rotY - this.rotZ * this.rotX);
+        var pitch = 0;
+        if (Math.abs(sinp) >= 1) {
+            pitch = Math.sign(sinp) * (Math.PI / 2); // use 90 degrees if out of range
+        }
+        else {
+            pitch = Math.asin(sinp);
+        }
+        var siny_cosp = +2.0 * (this.rotW * this.rotZ + this.rotX * this.rotY);
+        var cosy_cosp = +1.0 - 2.0 * (this.rotY * this.rotY + this.rotZ * this.rotZ);
+        var yaw = Math.atan2(siny_cosp, cosy_cosp);
+        return [roll, pitch, yaw];
+    };
+    Transform.prototype.rotateByEulerAngles = function (roll, pitch, yaw) {
+        var _a;
+        if (Array.isArray(roll)) {
+            _a = roll, roll = _a[0], pitch = _a[1], yaw = _a[2];
+        }
+        var _b = this.getEulerAngles(), cRoll = _b[0], cPitch = _b[1], cYaw = _b[2];
+        this.setEulerAngles(cRoll + roll, cPitch + pitch, cYaw + yaw);
+    };
+    Transform.prototype.getTransformation = function () {
+        if (this.dirty) {
+            this.transform = mat4.multiply(this.translation, mat4.multiply(this.scale, this.rotation));
+            this.dirty = false;
+        }
+        return this.transform;
+    };
+    return Transform;
+}());
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoidGhpbmdzLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsidGhpbmdzLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0lBNEJJO1FBeEJRLFdBQU0sR0FBVyxDQUFDLENBQUE7UUFDbEIsV0FBTSxHQUFXLENBQUMsQ0FBQTtRQUNsQixXQUFNLEdBQVcsQ0FBQyxDQUFBO1FBTWxCLFNBQUksR0FBVyxDQUFDLENBQUE7UUFDaEIsU0FBSSxHQUFXLENBQUMsQ0FBQTtRQUNoQixTQUFJLEdBQVcsQ0FBQyxDQUFBO1FBQ2hCLFNBQUksR0FBVyxDQUFDLENBQUE7UUFLaEIsU0FBSSxHQUFXLENBQUMsQ0FBQTtRQUNoQixTQUFJLEdBQVcsQ0FBQyxDQUFBO1FBQ2hCLFNBQUksR0FBVyxDQUFDLENBQUE7UUFPcEIsSUFBSSxDQUFDLFlBQVksR0FBRyxDQUFDLENBQUMsRUFBQyxDQUFDLEVBQUMsQ0FBQyxFQUFDLENBQUMsQ0FBQyxDQUFBO1FBRTdCLElBQUksQ0FBQyxXQUFXLENBQUMsQ0FBQyxFQUFFLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQztRQUMxQixJQUFJLENBQUMsUUFBUSxDQUFDLENBQUMsRUFBRSxDQUFDLEVBQUUsQ0FBQyxDQUFDLENBQUM7UUFDdkIsSUFBSSxDQUFDLFlBQVksQ0FBQyxDQUFDLEVBQUUsQ0FBQyxFQUFFLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQztRQUU5QixJQUFJLENBQUMsS0FBSyxHQUFHLElBQUksQ0FBQztRQUNsQixJQUFJLENBQUMsU0FBUyxHQUFHLElBQUksQ0FBQyxRQUFRLENBQUM7SUFDbkMsQ0FBQztJQUVELHVCQUFHLEdBQUgsVUFBSSxjQUFjO1FBQ2QsSUFBSSxDQUFDLFdBQVcsQ0FBQyxjQUFjLENBQUMsV0FBVyxFQUFFLENBQUMsQ0FBQztRQUMvQyxJQUFJLENBQUMsUUFBUSxDQUFDLGNBQWMsQ0FBQyxRQUFRLEVBQUUsQ0FBQyxDQUFDO1FBQ3pDLElBQUksQ0FBQyxxQkFBcUIsQ0FBQyxjQUFjLENB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
