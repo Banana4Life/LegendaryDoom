@@ -85,6 +85,7 @@ class Renderer {
     camera: Transform
     cameraYaw: number
     triangleCount: number
+    sky: number
 
     mapLoaded: boolean = false
 
@@ -95,6 +96,7 @@ class Renderer {
 
     constructor(cameraTransform: Transform) {
         this.camera = cameraTransform
+        this.sky = 0
     }
 
     initRenderer() {
@@ -403,7 +405,7 @@ class Renderer {
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        this.renderSky(gl)
+        this.renderSky(gl, this.sky)
 
         this.setupAttrib(0, "vertexPosition", this.buffers.vertices, 3)
 
@@ -432,12 +434,8 @@ class Renderer {
         this.renderCoordSystem(gl)
     }
 
-    private renderSky(gl: WebGL2RenderingContext) {
-        let sky = 0
-
-
+    private renderSky(gl: WebGL2RenderingContext, sky: number) {
         let rf = this.cameraYaw / (Math.PI / 2)
-
 
         let heightPart = 0.5
         let lowerEnd = 1 - 2 * heightPart
@@ -445,9 +443,10 @@ class Renderer {
             -1,        1, 1,   1,  1, 1,   -1, lowerEnd, 1,
             -1, lowerEnd, 1,   1,  1, 1,    1, lowerEnd, 1,
         ]
+        let skyboxCount = this.skyAtlas.boundaryLookup.size
         let texCoords = [
-            rf,        sky / 3,      1 + rf, sky / 3,      rf,     (sky + 1) / 3,
-            rf, (sky  + 1) / 3,      1 + rf, sky / 3,      1 + rf, (sky + 1) / 3
+            rf,        sky / skyboxCount,      1 + rf, sky / skyboxCount,      rf,     (sky + 1) / skyboxCount,
+            rf, (sky  + 1) / skyboxCount,      1 + rf, sky / skyboxCount,      1 + rf, (sky + 1) / skyboxCount
         ]
         let vertexBuffer = gl.createBuffer(); // Create an empty buffer object
         this.setupAttrib(0, "vertexPosition", vertexBuffer, 3)
