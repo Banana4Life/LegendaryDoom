@@ -685,19 +685,14 @@ class DoomMusic {
 class DoomColorMap {
     static readonly MapSize = 256
 
-    readonly map: number[]
+    readonly map: ArrayLike<number>
 
-    constructor(map: number[]) {
+    constructor(map: ArrayLike<number>) {
         this.map = map;
     }
 
     static parse(buf: Uint8Array, offset: number): DoomColorMap {
-        let map: number[] = new Array<number>(DoomColorMap.MapSize)
-        for (let i = 0; i < DoomColorMap.MapSize; ++i) {
-            map[i] = buf[offset + i]
-        }
-
-        return new DoomColorMap(map)
+        return new DoomColorMap(buf.slice(offset, offset + DoomColorMap.MapSize))
     }
 }
 

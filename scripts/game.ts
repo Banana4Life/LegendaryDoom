@@ -136,6 +136,7 @@ class Game {
 
         let map = this.doomGame.maps[0]
         if (!this.checkCollide(map, this.cameraTransform, oldPos, newPos)) {
+            this.cameraTransform.setPosition(oldPos)
             // console.log("Collide")
         }
 
@@ -220,7 +221,7 @@ class Game {
                 if (blockPosSearch === blockPos) {
                     if (!func( thing ) ) {
                         let [x,y,z] = thing.getPosition()
-                        console.log(`Collided with thing ${thing.thing.type} at ${-z}:${-x}`)
+                        // console.log(`Collided with thing ${thing.thing.type} at ${-z}:${-x}`)
                         return false
                     }
                 }
@@ -270,11 +271,11 @@ class Game {
             if (!(thing.mobj.flags & (MF_SOLID | MF_SPECIAL | MF_SHOOTABLE))) {
                 return true
             }
-            let blockdist = thing.mobj.radius + tmthing.mobj.radius
+            let blockdist = (thing.mobj.radius >> FRACBITS) + (tmthing.mobj.radius >> FRACBITS)
 
-            let [x1,y2,z3] = thing.getPosition()
-            let thingx = -z
-            let thingy = -x
+            let [x1,y1,z1] = thing.getPosition()
+            let thingx = -z1
+            let thingy = -x1
             if (Math.abs(thingx - tmthingX) >= blockdist
                 || Math.abs(thingy -tmthingY) >= blockdist) {
                 return true // didn't hit it
@@ -341,6 +342,7 @@ class Game {
                     // can remove thing
                     // TODO
                     // P_TouchSpecialThing (thing, tmthing);
+                    console.log(`Pickup ${thing.mobj.doomednum}`)
                 }
                 return !solid
             }
@@ -348,15 +350,16 @@ class Game {
             return !(thing.mobj.flags & MF_SOLID)
         }
 
-        for (let bx=xl ; bx<=xh ; bx++)
-            for (let by=yl ; by<=yh ; by++)
-                if (!forEachThing(bx,by,PIT_CheckThing, this.liveThings))
-                    return false;
+        for (let bx = xl; bx <= xh; bx++)
+            for (let by = yl; by <= yh; by++)
+                if (!forEachThing(bx, by, PIT_CheckThing, this.liveThings))
+                    return false
 
         // check lines
         xl = (tmboxLeft - blockMapOriginX)>>MAPBLOCKSHIFT;
         xh = (tmboxRight - blockMapOriginX)>>MAPBLOCKSHIFT;
         yl = (tmboxBottom - blockMapOriginY)>>MAPBLOCKSHIFT;
+        yh = (tmboxTop - blockMapOriginY)>>MAPBLOCKSHIFT;
 
         function PIT_CheckLine(linedef: DoomLineDef) {
             // TODO not sure
@@ -572,12 +575,10 @@ class Game {
             return true;
         }
 
-        yh = (tmboxTop - blockMapOriginY)>>MAPBLOCKSHIFT;
-
-        for (let bx=xl ; bx<=xh ; bx++)
-            for (let by=yl ; by<=yh ; by++)
-                if (!forEachLine (bx,by,PIT_CheckLine))
-                    return false;
+        for (let bx = xl; bx <= xh; bx++)
+            for (let by = yl; by <= yh; by++)
+                if (!forEachLine(bx, by, PIT_CheckLine))
+                    return false
 
         return true
     }
