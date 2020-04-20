@@ -413,11 +413,18 @@ class Renderer {
             gl.drawElements(gl.TRIANGLES, this.triangleCount, gl.UNSIGNED_SHORT, 0)
         }
 
+        this.renderThings(gl)
+
         this.renderCoordSystem(gl)
     }
 
-    private renderCoordSystem(gl) {
-        let size = 50000
+    private renderThings(gl) {
+        for (const thing of this.things) {
+            this.renderCoordSystem(gl, 20, thing)
+        }
+    }
+
+    private renderCoordSystem(gl, size = 50000, transform: Transform = undefined) {
         let vertices = [
             0, 0, 0,	size, 0, 0,
             0, 0, 0,	0, size, 0,
@@ -440,11 +447,17 @@ class Renderer {
 
         gl.useProgram(this.shaders[1].program);
 
-        gl.uniformMatrix4fv(this.shaders[1].uniform["modelMatrix"], false, mat4.identity)
+        gl.uniformMatrix4fv(this.shaders[1].uniform["modelMatrix"], false, transform ? mat4.invert(transform.getTransformation()) : mat4.identity)
         gl.uniformMatrix4fv(this.shaders[1].uniform["viewMatrix"], false, this.camera.getTransformation())
         gl.uniformMatrix4fv(this.shaders[1].uniform["projectionMatrix"], false, this.projectionMatrix)
 
         gl.drawArrays(gl.LINES, 0, 6);
+    }
+
+    things: Transform[] = []
+
+    addThing(transform: Transform) {
+        this.things.push(transform)
     }
 }
 

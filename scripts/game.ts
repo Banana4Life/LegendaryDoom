@@ -153,9 +153,18 @@ class Game {
         this.renderer.loadPalettes(this.doomGame.colorPalettes)
         this.renderer.loadTextures(this.doomGame.textures.textures)
         this.renderer.loadMap(this.doomGame.maps[0])
+        this.loadThings()
 
         this.paused = false
         this.updateLoop(window, 0)
     }
 
+    private loadThings() {
+        for (const thing of this.doomGame.maps[0].things) {
+            let transform = new Transform()
+            transform.setPosition(-thing.y, -this.getHeight(thing.x, thing.y), -thing.x)
+            transform.setEulerAngles(0, 0, deg2rad(thing.angle))
+            this.renderer.addThing(transform)
+        }
+    }
 }
