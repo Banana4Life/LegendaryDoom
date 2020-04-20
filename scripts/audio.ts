@@ -10,6 +10,7 @@ class AudioManager {
 
     audioContext: AudioContext
     muted: boolean
+    mutedSounds: boolean = false;
     audioCache
     t: number
     private gameData: DoomGame;
@@ -30,6 +31,9 @@ class AudioManager {
     }
 
     play(sound: Sound | string, volume: number = 1, now: boolean = false) {
+        if (this.mutedSounds) {
+            return
+        }
         if (!this.audioContext) {
             this.audioContext = new AudioContext()
         }
@@ -77,20 +81,33 @@ class AudioManager {
     midiInitialized = false
     paused = false
 
+
+    toggleSounds() {
+        this.mutedSounds = !this.mutedSounds;
+        if (this.mutedSounds) {
+            logToGameConsole("Sound muted")
+        } else {
+            logToGameConsole("Sound unmuted")
+        }
+    }
+
     toggleMusic(mute = false) {
         if (this.playing) {
             if (mute) {
                 this.muted = !this.muted
+                if (this.muted) {
+                    logToGameConsole("Music muted")
+                } else {
+                    logToGameConsole("Music unmuted")
+                }
             }
             this.paused = !this.paused
             if (this.paused || this.muted) {
                 // @ts-ignore
                 MIDI.Player.pause()
-                console.log("paused music")
             } else {
                 // @ts-ignore
                 MIDI.Player.resume()
-                console.log("resumed music")
             }
         }
     }
@@ -141,9 +158,10 @@ class AudioManager {
         this.cacheMusic0(name).then(midiFile => {
             this.playing = name
             this.midiInitialized = false
-            console.log("Start playing Midi " + name + " with " + midiFile['instruments'])
             // @ts-ignore
             MIDI.Player.playMidiFile(midiFile, volume, () => {
+                logToGameConsole(`Now playing ${name}`)
+                // with ${midiFile['instruments']}
                 this.midiInitialized = true
             })
             // @ts-ignore
@@ -152,7 +170,7 @@ class AudioManager {
                     this.playing = undefined
                     // @ts-ignore
                     MIDI.Player.setListener(undefined);
-                    console.log("MIDI Song finished")
+                    // console.log("MIDI Song finished")
                 }
             })
         })
@@ -160,7 +178,7 @@ class AudioManager {
 
     getMidiFromMus(name) {
         let music = this.gameData.getMusic(name)
-        let midiBinary = mus2midi(music.data.buffer)
+        let midiBinary = mus2midi(music.data.buffer, name)
         // console.log(btoa(new Uint8Array(midiBinary).reduce((data, byte) => data + String.fromCharCode(byte), '')))
         if (midiBinary !== false) {
             return MidiFile(new Uint8Array(midiBinary))

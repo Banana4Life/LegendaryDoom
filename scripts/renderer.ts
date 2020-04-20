@@ -80,9 +80,9 @@ class Renderer {
 
     mapLoaded: boolean = false
 
-    readonly fov = 90 * Math.PI / 180
+    readonly fov = deg2rad(90)
     readonly near = 0.1
-    readonly far = 100000
+    readonly far = 10000
 
     constructor(cameraTransform: Transform) {
         this.camera = cameraTransform
@@ -387,7 +387,7 @@ class Renderer {
         gl.useProgram(this.shaders[0].program)
 
         gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, mat4.identity)
-        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.camera.getMatrix())
+        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.camera.getTransformation())
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
 
         gl.activeTexture(gl.TEXTURE0)

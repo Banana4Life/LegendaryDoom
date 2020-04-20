@@ -10,7 +10,9 @@ class Controls {
 
         ESCAPE: new ConfigurableKey("Escape"),
         SPACEBAR: new ConfigurableKey("Space"),
-        M: new ConfigurableKey("KeyM"),
+
+        MUTE_MUSIC: new ConfigurableKey("KeyM"),
+        MUTE_SOUND: new ConfigurableKey("KeyN")
     }
 
     buttons = {
@@ -64,7 +66,7 @@ class Controls {
     }
 
     lockPointer(elem: Element): void {
-        console.log("Locking pointer onto " + elem)
+        // console.log("Locking pointer onto " + elem)
         elem.requestPointerLock()
     }
 
@@ -112,7 +114,7 @@ class Controls {
             this.pressedKeys.splice(this.pressedKeys.indexOf(e.code))
         })
         document.addEventListener("click", (e: MouseEvent) => {
-            console.log(`CLICK ${this.mousePos.x}:${this.mousePos.y}`)
+            // console.log(`CLICK ${this.mousePos.x}:${this.mousePos.y}`)
         })
 
         document.addEventListener("mousedown", (e: MouseEvent) => {
@@ -154,7 +156,6 @@ class ConfigurableKey {
     constructor(...codes: String[]) {
         this.codes = codes
     }
-
     configure(...codes: String[]) {
         this.codes = codes
     }

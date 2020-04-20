@@ -266,13 +266,13 @@
 				///
 				allPromise = allPromise.then(() => {
 					let promise = Promise.resolve()
-					console.log(`Load instrument ${instrumentId}`)
+					logToGameConsole(`Loading instrument ${instrument}`)
 					for (let index = 0; index < urls.length; index++) {
 						let key = urls[index];
 						promise = promise.then(() => requestAudio(soundfont, instrumentId, index, key))
 					}
 					promise = promise.then(() => {
-						console.log(`Loaded instrument ${instrumentId}`)
+						logToGameConsole(`Loaded instrument ${instrument}`)
 						soundfont.isLoaded = true;
 					})
 					return promise

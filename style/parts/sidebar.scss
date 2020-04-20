@@ -2,6 +2,7 @@
   float: right;
   width: 200px;
   height: 100%;
+
   & > div {
     margin: 5px;
   }
@@ -27,12 +28,23 @@
 
     &.drag-hover {
       background-color: darkred;
+
       span.drop {
         display: inline;
       }
+
       span.hint {
         display: none;
       }
+    }
+  }
+
+  #console {
+    width: 100%;
+
+    textarea {
+      resize: none;
+      height: 200px;
     }
   }
 

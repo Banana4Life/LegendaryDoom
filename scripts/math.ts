@@ -74,13 +74,13 @@ const mat4 = {
         ]
     },
 
-    scaling: function (x, y, z) {
+    scale: function (x, y, z) {
         return [
             x, 0, 0, 0,
             0, y, 0, 0,
             0, 0, z, 0,
             0, 0, 0, 1,
-        ]
+        ];
     },
 
     rotation: function (w, x = 0, y = 0, z = 0) {
@@ -96,22 +96,21 @@ const mat4 = {
         ])
     },
 
-    perspective: function (fov, aspect, near, far) {
-        let a = 1.0 / Math.tan(fov / 2.0)
-        let b = a / aspect
-        let nf = 1 / (near - far)
-        let c = (far + near) * nf
-        let d = 2 * far * near * nf
+    perspective: function(fieldOfViewYInRadians, aspect, near, far) {
+        const f = Math.tan((Math.PI / 2) - (fieldOfViewYInRadians / 2));
+        const rangeInv = 1.0 / (near - far);
 
         return [
-            b, 0, 0, 0,
-            0, a, 0, 0,
-            0, 0, c, -1,
-            0, 0, d, 0
+            f / aspect, 0, 0, 0,
+            0, f, 0, 0,
+            0, 0, (near + far) * rangeInv, -1,
+            0, 0, near * far * rangeInv * 2, 0
         ]
-    }
+    },
 }
 
 function deg2rad(degrees) {
     return degrees * Math.PI / 180
 }
+
+
