@@ -164,8 +164,10 @@ class Transform {
     }
 
     moveForward(x, y, z) {
-        let [x2, y2, z2, ] = mat4.multiplyV4(this.rotation, [x, y, z, 0])
-        this.move(x2, y2, z2)
+        let [x2,, z2, ] = mat4.multiplyV4(this.rotation, [x, 0, z, 0])
+        this.move(x2, 0, z2)
+        let [,y2,,] = mat4.multiplyV4(this.rotation, [0, y, 0, 0])
+        this.move(0, y2, 0)
     }
 
     setScale(x, y = x, z = x) {
