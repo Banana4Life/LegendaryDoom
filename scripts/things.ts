@@ -1,103 +1,3 @@
-class Transform_ {
-    dirty
-    matrix
-    transX
-    transY
-    transZ
-    roll
-    pitch
-    yaw
-
-    constructor() {
-        this.setPosition(0, 0, 0)
-        this.setEulerAngles(0, 0, 0)
-
-        this.dirty = true
-        this.matrix = mat4.identity
-    }
-
-    set(otherTransform) {
-        this.setPosition(otherTransform.getTranslation())
-        this.setEulerAngles(otherTransform.getRotation())
-    }
-
-    setPosition(x, y = 0, z = 0) {
-        if (Array.isArray(x)) {
-            [x, y, z] = x
-        }
-        this.transX = x
-        this.transY = y
-        this.transZ = z
-
-        this.dirty = true
-    }
-
-    getPosition() {
-        return [this.transX, this.transY, this.transZ]
-    }
-
-    move(x, y = 0, z = 0) {
-        if (Array.isArray(x)) {
-            [x, y, z] = x
-        }
-        this.setPosition(this.transX + x, this.transY + y, this.transZ + z)
-    }
-
-    moveForward(x, y, z) {
-        let rotation = mat4.rotation(this.quaternion())
-        let [x2, y2, z2, ] = mat4.multiplyV4(rotation, [x, y, z, 0])
-        this.move(x2, y2, z2)
-    }
-
-    setEulerAngles(roll, pitch = 0, yaw = 0) {
-        if (Array.isArray(roll)) {
-            [roll, pitch, yaw] = roll
-        }
-        this.roll = roll
-        this.pitch = pitch
-        this.yaw = yaw
-
-        this.dirty = true
-    }
-
-    getEulerAngles() {
-        return [this.roll, this.pitch, this.yaw]
-    }
-
-    rotateByEulerAngles(roll, pitch = 0, yaw = 0) {
-        if (Array.isArray(roll)) {
-            [roll, pitch, yaw] = roll
-        }
-        this.setEulerAngles(this.roll + roll, this.pitch + pitch, this.yaw + yaw)
-    }
-
-    getTransformation() {
-        if (this.dirty) {
-            //this.matrix = mat4.multiply(mat4.rotation(this.roll, this.pitch, this.yaw),
-            this.matrix = mat4.multiply(mat4.translation(this.transX, this.transY, this.transZ),
-                mat4.rotation(this.quaternion()))
-            this.dirty = false
-        }
-        return this.matrix
-    }
-
-    private quaternion() {
-        const cr = Math.cos(this.roll / 2)
-        const sr = Math.sin(this.roll / 2)
-        const cp = Math.cos(this.pitch / 2)
-        const sp = Math.sin(this.pitch / 2)
-        const cy = Math.cos(this.yaw / 2)
-        const sy = Math.sin(this.yaw / 2)
-
-        return [
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            sr * cp * sy + cr * sp * cy,
-            cr * cp * sy - sr * sp * cy
-        ]
-    }
-}
-
 class Transform {
     private dirty: boolean
     private transform: number[]
@@ -235,26 +135,28 @@ class Transform {
         if (Array.isArray(roll)) {
             [roll, pitch, yaw] = roll;
         }
+
+        let q1 = this.angleAxisQuat(pitch, 1, 0, 0)
+        let q2 = this.angleAxisQuat(yaw, 0, 1, 0)
+        let q3 = this.angleAxisQuat(roll, 0, 0, -1)
+
+        let newQuat = mat4.multiplyQuaternions(this.baseRotation, mat4.multiplyQuaternions(mat4.multiplyQuaternions(q1,q2), q3))
+
+        this.setRotationQuaternion(newQuat)
+
         // const cr = Math.cos(roll * 0.5);
         // const sr = Math.sin(roll * 0.5);
         // const cp = Math.cos(pitch * 0.5);
         // const sp = Math.sin(pitch * 0.5);
         // const cy = Math.cos(yaw * 0.5);
         // const sy = Math.sin(yaw * 0.5);
-
-        let q1 = this.angleAxisQuat(pitch, 1, 0, 0)
-        let q2 = this.angleAxisQuat(yaw, 0, 1, 0)
-        let q3 = this.angleAxisQuat(roll, 0, 0, -1)
-
-        let [qw, qx, qy ,qz] = mat4.multiplyQuaternions(this.baseRotation, mat4.multiplyQuaternions(mat4.multiplyQuaternions(q1,q2), q3))
-        this.setRotationQuaternion(qw, qx, qy, qz)
-
-        // this.setRotationQuaternion(
-        //     cr * cp * cy + sr * sp * sy,
-        //     sr * cp * cy - cr * sp * sy,
-        //     sr * cp * sy + cr * sp * cy,
-        //     cr * cp * sy - sr * sp * cy
-        // )
+        //
+        // let rotQuat = [cr * cp * cy + sr * sp * sy,
+        //                sr * cp * cy - cr * sp * sy,
+        //                sr * cp * sy + cr * sp * cy,
+        //                cr * cp * sy - sr * sp * cy]
+        //
+        // newQuat = mat4.multiplyQuaternions(this.baseRotation, rotQuat)
     }
 
     getEulerAngles() {
