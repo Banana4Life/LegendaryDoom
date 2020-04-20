@@ -622,7 +622,8 @@ class DoomPalette {
     static parse(buf: Uint8Array, offset: number): DoomPalette {
         let palette: [number, number, number][] = new Array<[number, number, number]>(DoomPalette.Colors)
         for (let i = 0; i < DoomPalette.Colors; ++i) {
-            palette[i] = [buf[offset + i], buf[offset + i + 1], buf[offset + i + 2]]
+            let colorOffset = offset + i * DoomPalette.Channels
+            palette[i] = [buf[colorOffset], buf[colorOffset + 1], buf[colorOffset + 2]]
         }
 
         return new DoomPalette(palette)
