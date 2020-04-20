@@ -132,16 +132,14 @@ class Game {
 
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
             // game.audio.play(Sound.PISTOL, 0.2)
-            this.audio.play(Sound.PLASMA, 0.2, true)
+            this.audio.playWadSound("PUNCH", 0.2)
+            // this.audio.play(Sound.PLASMA, 0.2, true)
         }
         if (this.controls.buttonPressed(this.controls.buttons.MIDDLE)) {
             this.audio.playWadSound("OOF", 0.2)
         }
         if (this.controls.keyPressed(this.controls.keys.MOVE_FORWARD)) {
             document.querySelector("h3").textContent = "You are getting closer too DOOM!"
-            // game.audio.play(Sound.SHOT)
-            this.audio.playWadSound("PUNCH", 0.2)
-
         } else {
             document.querySelector("h3").textContent = "DOOM awaits you!"
         }

@@ -86,7 +86,9 @@ class Controls {
 
         document.addEventListener("keydown", (e: KeyboardEvent) => {
             // console.log(`DOWN ${e.code}`)
-            this.pressedKeys.push(e.code)
+            if (this.pressedKeys.indexOf(e.code) === -1) {
+                this.pressedKeys.push(e.code)
+            }
             if (!e.code.startsWith("F")) {
                 e.preventDefault()
             }
