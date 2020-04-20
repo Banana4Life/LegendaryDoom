@@ -16,7 +16,7 @@ void main() {
     // highp float tiledCoordY = mod((texCoord.y - texBoundary.y) * texTiling.y, texBoundary.w) + texBoundary.y;
     highp uint color = texture(atlasSampler, vec2(texCoord.x, texCoord.y)).x;
     highp uint mappedColor = texelFetch(colorMapsSampler, ivec2(color, lightLvl), 0).x;
-    highp uvec4 paletteColor = texelFetch(palettesSampler, ivec2(251, 0), 0);
+    highp uvec4 paletteColor = texelFetch(palettesSampler, ivec2(mappedColor, 0), 0);
     fragColor = vec4(float(paletteColor.x) / 256.0, float(paletteColor.y) / 256.0, float(paletteColor.z) / 256.0, float(paletteColor.w) / 256.0);
     //fragColor = vec4(float(mappedColor) / 256.0, 0, 0, 1);
 }
