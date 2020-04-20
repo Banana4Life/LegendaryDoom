@@ -432,17 +432,17 @@ class Renderer {
     }
 
     private renderSky(gl) {
+        let sky = 2
+        let rot = 0
+
+        let lowerEnd = -1
         let vertices = [
-            -1,  1, 1,   1,  1, 1,   -1, -1, 1,
-            -1, -1, 1,   1,  1, 1,    1, -1, 1,
+            -1,        1, 1,   1,  1, 1,   -1, lowerEnd, 1,
+            -1, lowerEnd, 1,   1,  1, 1,    1, lowerEnd, 1,
         ]
-        // let texCoords = [
-        //     0,   0,      255, 0,      0, 127,
-        //     0, 127,      255, 0,      255, 127
-        // ]
         let texCoords = [
-            0,   0,      1, 0,      0, 1,
-            0,   1,      1, 0,      1, 1
+            0,        sky / 3,      1, sky / 3,      0, (sky + 1) / 3,
+            0, (sky  + 1) / 3,      1, sky / 3,      1, (sky + 1) / 3
         ]
         let vertexBuffer = gl.createBuffer(); // Create an empty buffer object
         this.setupAttrib(0, "vertexPosition", vertexBuffer, 3)
@@ -515,4 +515,3 @@ class Renderer {
         this.things.push(transform)
     }
 }
-
