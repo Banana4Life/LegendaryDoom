@@ -120,6 +120,8 @@ class Game {
     }
 
     private startLoop() {
+        this.renderer.loadColorMaps(this.doomGame.colorMaps)
+        this.renderer.loadPalettes(this.doomGame.colorPalettes)
         this.renderer.loadTextures(this.doomGame.textures.textures)
         this.renderer.loadMap(this.doomGame.maps[0])
 
