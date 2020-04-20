@@ -136,6 +136,7 @@ class Game {
 
         let map = this.doomGame.maps[0]
         if (!this.checkCollide(map, this.cameraTransform, oldPos, newPos)) {
+            this.cameraTransform.setPosition(oldPos)
             // console.log("Collide")
         }
 
@@ -220,7 +221,7 @@ class Game {
                 if (blockPosSearch === blockPos) {
                     if (!func( thing ) ) {
                         let [x,y,z] = thing.getPosition()
-                        console.log(`Collided with thing ${thing.thing.type} at ${-z}:${-x}`)
+                        // console.log(`Collided with thing ${thing.thing.type} at ${-z}:${-x}`)
                         return false
                     }
                 }
@@ -349,15 +350,16 @@ class Game {
             return !(thing.mobj.flags & MF_SOLID)
         }
 
-        for (let bx=xl ; bx<=xh ; bx++)
-            for (let by=yl ; by<=yh ; by++)
-                if (!forEachThing(bx,by,PIT_CheckThing, this.liveThings))
-                    return false;
+        for (let bx = xl; bx <= xh; bx++)
+            for (let by = yl; by <= yh; by++)
+                if (!forEachThing(bx, by, PIT_CheckThing, this.liveThings))
+                    return false
 
         // check lines
         xl = (tmboxLeft - blockMapOriginX)>>MAPBLOCKSHIFT;
         xh = (tmboxRight - blockMapOriginX)>>MAPBLOCKSHIFT;
         yl = (tmboxBottom - blockMapOriginY)>>MAPBLOCKSHIFT;
+        yh = (tmboxTop - blockMapOriginY)>>MAPBLOCKSHIFT;
 
         function PIT_CheckLine(linedef: DoomLineDef) {
             // TODO not sure
@@ -573,12 +575,10 @@ class Game {
             return true;
         }
 
-        yh = (tmboxTop - blockMapOriginY)>>MAPBLOCKSHIFT;
-
-        for (let bx=xl ; bx<=xh ; bx++)
-            for (let by=yl ; by<=yh ; by++)
-                if (!forEachLine (bx,by,PIT_CheckLine))
-                    return false;
+        for (let bx = xl; bx <= xh; bx++)
+            for (let by = yl; by <= yh; by++)
+                if (!forEachLine(bx, by, PIT_CheckLine))
+                    return false
 
         return true
     }
