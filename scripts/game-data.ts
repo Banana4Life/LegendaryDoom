@@ -161,6 +161,8 @@ class DoomGame {
         let textures = DoomGame.parseTextures(wad, patches)
         let maps = DoomGame.parseMaps(wad, textures)
 
+        colorPalette.forEach(p => p.dumpToUrl())
+
         return new DoomGame(wad, colorMap, colorPalette, patches, flats, textures, maps)
     }
 
@@ -627,6 +629,25 @@ class DoomPalette {
         }
 
         return new DoomPalette(palette)
+    }
+
+    dumpToUrl() {
+        let canvas = document.createElement("canvas")
+        canvas.width = 16;
+        canvas.height = 16;
+        let ctx = canvas.getContext("2d")
+        let imageData = ctx.createImageData( 16, 16)
+        for (let i = 0; i < DoomPalette.Colors; ++i) {
+            let imageOffset = i * 4
+            imageData.data[imageOffset + 0] = this.colors[i][0]
+            imageData.data[imageOffset + 1] = this.colors[i][1]
+            imageData.data[imageOffset + 2] = this.colors[i][2]
+            imageData.data[imageOffset + 3] = 255
+        }
+        ctx.imageSmoothingEnabled = false;
+        ctx.putImageData(imageData, 0, 0)
+
+        console.log("color palette", canvas.toDataURL())
     }
 }
 
