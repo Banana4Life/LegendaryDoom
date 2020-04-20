@@ -1,4 +1,4 @@
-class Transform {
+class Transform_ {
     dirty
     matrix
     transX
@@ -98,7 +98,7 @@ class Transform {
     }
 }
 
-class Transform_ {
+class Transform {
     private dirty: boolean
     private transform: number[]
 
@@ -107,6 +107,9 @@ class Transform_ {
     private scaleZ: number = 1
     private scale: number[]
 
+    private rotEulerRoll: number
+    private rotEulerPitch: number
+    private rotEulerYaw: number
     private rotW: number = 0
     private rotX: number = 0
     private rotY: number = 0
@@ -218,14 +221,19 @@ class Transform_ {
         if (Array.isArray(roll)) {
             [roll, pitch, yaw] = roll;
         }
-        const cy = Math.cos(yaw * 0.5);
-        const sy = Math.sin(yaw * 0.5);
-        const cp = Math.cos(pitch * 0.5);
-        const sp = Math.sin(pitch * 0.5);
         const cr = Math.cos(roll * 0.5);
         const sr = Math.sin(roll * 0.5);
+        const cp = Math.cos(pitch * 0.5);
+        const sp = Math.sin(pitch * 0.5);
+        const cy = Math.cos(yaw * 0.5);
+        const sy = Math.sin(yaw * 0.5);
 
-        this.setRotationQuaternion(cy * cp * cr + sy * sp * sr, cy * cp * sr - sy * sp * cr, sy * cp * sr + cy * sp * cr, sy * cp * cr - cy * sp * sr)
+        this.setRotationQuaternion(
+            cr * cp * cy + sr * sp * sy,
+            sr * cp * cy - cr * sp * sy,
+            sr * cp * sy + cr * sp * cy,
+            cr * cp * sy - sr * sp * cy
+        )
     }
 
     getEulerAngles() {
@@ -259,7 +267,7 @@ class Transform_ {
 
     getTransformation() {
         if (this.dirty) {
-            this.transform = mat4.multiply(this.rotation, mat4.multiply(this.scale, this.translation));
+            this.transform = mat4.multiply(this.translation, mat4.multiply(this.scale, this.rotation));
             this.dirty = false;
         }
         return this.transform;

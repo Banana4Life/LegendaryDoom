@@ -5,10 +5,15 @@ class Game {
     doomGame: DoomGame
     paused: boolean
     private readonly cameraTransform: Transform
+    private cameraPitch: number
+    private cameraYaw: number
 
 
     constructor(gameData: DoomGame) {
         this.cameraTransform = new Transform()
+        this.cameraPitch = 0
+        this.cameraYaw = 0
+
         this.controls = new Controls()
         this.renderer = new Renderer(this.cameraTransform)
         this.audio = new AudioManager(gameData)
@@ -61,7 +66,7 @@ class Game {
 
         let playerThing = this.doomGame.maps[0].things[0]
         this.cameraTransform.setPosition(-playerThing.y, -41, -playerThing.x)
-        this.cameraTransform.setEulerAngles(0, deg2rad(playerThing.angle), 0)
+        this.cameraYaw = deg2rad(playerThing.angle)
 
         return this.renderer.initRenderer()
             .then(this.startLoop.bind(this))
@@ -97,9 +102,11 @@ class Game {
         }
 
         let [dyaw, dpitch] = this.controls.getMouseChange()
+        this.cameraPitch += deg2rad(dpitch * dt)
+        this.cameraYaw += deg2rad(dyaw * dt)
 
         this.cameraTransform.moveForward(dx * dt, dy * dt, dz * dt)
-        this.cameraTransform.rotateByEulerAngles(deg2rad(dpitch) * dt, deg2rad(dyaw) * dt, 0)
+        this.cameraTransform.setEulerAngles(this.cameraPitch, this.cameraYaw, 0)
 
         // TODO actual game logic
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
