@@ -395,7 +395,7 @@ class Renderer {
     }
 
     colorPalette = 0
-    render(dt) {
+    render(dt: number): void {
         let gl = this.webgl
 
         gl.clearColor(.2, .2, .2, 1)
@@ -431,18 +431,20 @@ class Renderer {
         this.renderCoordSystem(gl)
     }
 
-    private renderSky(gl) {
-        let sky = 2
-        let rot = 0
+    private renderSky(gl: WebGL2RenderingContext) {
+        let sky = 0
 
-        let lowerEnd = -1
+        let rf = 0 / (360 / 4)
+
+        let heightPart = 0.5
+        let lowerEnd = 1 - 2 * heightPart
         let vertices = [
             -1,        1, 1,   1,  1, 1,   -1, lowerEnd, 1,
             -1, lowerEnd, 1,   1,  1, 1,    1, lowerEnd, 1,
         ]
         let texCoords = [
-            0,        sky / 3,      1, sky / 3,      0, (sky + 1) / 3,
-            0, (sky  + 1) / 3,      1, sky / 3,      1, (sky + 1) / 3
+            rf,        sky / 3,      1 + rf, sky / 3,      rf,     (sky + 1) / 3,
+            rf, (sky  + 1) / 3,      1 + rf, sky / 3,      1 + rf, (sky + 1) / 3
         ]
         let vertexBuffer = gl.createBuffer(); // Create an empty buffer object
         this.setupAttrib(0, "vertexPosition", vertexBuffer, 3)
