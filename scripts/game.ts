@@ -146,10 +146,14 @@ class Game {
 
     }
 
+    private loadSkies(): DoomPicture[] {
+        return ["SKY1", "SKY2", "SKY3"].map(n => this.doomGame.getArbitraryPicture(n))
+    }
+
     private startLoop() {
         this.renderer.loadColorMaps(this.doomGame.colorMaps)
         this.renderer.loadPalettes(this.doomGame.colorPalettes)
-        this.renderer.loadTextures(this.doomGame.textures.textures)
+        this.renderer.loadTextures(this.doomGame.textures.textures, this.loadSkies())
         this.renderer.loadMap(this.doomGame.maps[0])
         this.loadThings()
 

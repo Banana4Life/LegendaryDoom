@@ -66,15 +66,22 @@ function loadShader(gl, baseName, attributes, uniforms) {
     })
 }
 
+type AtlasBounary = [number, number, number, number]
+type TextureAtlas = {
+    texture: WebGLTexture,
+    boundaryLookup: Map<string, AtlasBounary>
+}
+
 class Renderer {
     shaders: {program: any, attribute: {}, uniform: {}}[]
     canvas: HTMLCanvasElement
     webgl: WebGL2RenderingContext
     buffers
-    atlas
-    colorMapsTexture
+    wallAtlas: TextureAtlas
+    skyAtlas: TextureAtlas
+    colorMapsTexture: WebGLTexture
     colorMapCount
-    palettesTexture
+    palettesTexture: WebGLTexture
     camera: Transform
     triangleCount: number
 
@@ -114,7 +121,10 @@ class Renderer {
                 ["modelMatrix", "viewMatrix", "projectionMatrix", "atlasSampler", "colorMapsSampler", "palettesSampler", "colorPalette"]),
             loadShader(gl, "shaders/simpler",
                 ["coordinates", "colors"],
-                ["modelMatrix", "viewMatrix", "projectionMatrix"])
+                ["modelMatrix", "viewMatrix", "projectionMatrix"]),
+            loadShader(gl, "shaders/sky",
+                ["vertexPosition", "textureCoord"],
+                ["atlasSampler", "colorMapsSampler", "palettesSampler", "colorPalette"]),
         ]
 
         this.buffers = {
@@ -146,16 +156,7 @@ class Renderer {
 
         let colorMapsUint8Array = new Uint8Array(colorMapsArray)
 
-        let gl = this.webgl
-
-        const colorMapsTexture = gl.createTexture()
-        gl.bindTexture(gl.TEXTURE_2D, colorMapsTexture)
-
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8UI, DoomColorMap.MapSize, colorMaps.length, 0, gl.RED_INTEGER, gl.UNSIGNED_BYTE, colorMapsUint8Array)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
-
-        this.colorMapsTexture = colorMapsTexture
+        this.colorMapsTexture = this.createSingleChannelUint8Texture(DoomColorMap.MapSize, colorMaps.length, colorMapsUint8Array)
         this.colorMapCount = colorMaps.length
     }
 
@@ -191,13 +192,13 @@ class Renderer {
         this.palettesTexture = palettesTexture
     }
 
-    loadTextures(textures: Map<string, DoomTexture>) {
+    loadTextures(textures: Map<string, DoomTexture>, skies: DoomPicture[]) {
         const atlasWidth = 2048
         const atlasHeight = 2048
         const rowHeight = 128
 
-        let atlas = new Array(atlasWidth * atlasHeight)
-        let atlasBoundaryLookup = {}
+        let atlas = new Uint8Array(atlasWidth * atlasHeight)
+        let atlasBoundaryLookup = new Map<string, AtlasBounary>()
 
         for (let i = 0; i < atlasWidth * atlasHeight; i++) {
             atlas[i] = 0
@@ -212,8 +213,8 @@ class Renderer {
                 atlasY += rowHeight
             }
 
-            atlasBoundaryLookup[name] = [atlasX / atlasWidth, atlasY / atlasHeight,
-                texture.width / atlasWidth, texture.height / atlasHeight]
+            atlasBoundaryLookup.set(name, [atlasX / atlasWidth, atlasY / atlasHeight,
+                texture.width / atlasWidth, texture.height / atlasHeight])
 
             for (let x = 0; x < texture.width; x++) {
                 for (let y = 0; y < texture.height; y++) {
@@ -234,21 +235,42 @@ class Renderer {
 
         console.log("Texture atlas created.")
 
-        let pixels = new Uint8Array(atlas)
+        this.wallAtlas = {
+            texture: this.createSingleChannelUint8Texture(atlasWidth, atlasHeight, atlas),
+            boundaryLookup: atlasBoundaryLookup
+        }
 
+        let skyWidth = skies[0].width
+        let skyHeight = skies[0].height
+        let skyLength = skyWidth * skyHeight
+        let [skyAtlasWidth, skyAtlasHeight] = [skyWidth, skyHeight * skies.length]
+        let skyAtlasPixels = new Uint8Array(skyAtlasWidth * skyAtlasHeight)
+        let skyAtlasBoundaryLookup = new Map<string, AtlasBounary>()
+        for (let skyIndex = 0; skyIndex < skies.length; ++skyIndex) {
+            let sky = skies[skyIndex]
+            skyAtlasBoundaryLookup.set(sky.name, [0, (skyHeight * skyIndex) / skyAtlasHeight, skyWidth / skyAtlasWidth, skyHeight / skyAtlasHeight])
+            let len = sky.width * sky.height
+            for (let i = 0; i < len; ++i) {
+                skyAtlasPixels[skyIndex * skyLength + i] = sky.pixels[i]
+            }
+        }
+
+        this.skyAtlas = {
+            texture: this.createSingleChannelUint8Texture(skyAtlasWidth, skyAtlasHeight, skyAtlasPixels),
+            boundaryLookup: skyAtlasBoundaryLookup,
+        }
+    }
+
+    private createSingleChannelUint8Texture(width: number, height: number, pixelData: Uint8Array): WebGLTexture {
         let gl = this.webgl
+        const texture = gl.createTexture()
 
-        const atlasTexture = gl.createTexture()
-        gl.bindTexture(gl.TEXTURE_2D, atlasTexture)
-
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8UI, atlasWidth, atlasHeight, 0, gl.RED_INTEGER, gl.UNSIGNED_BYTE, pixels)
+        gl.bindTexture(gl.TEXTURE_2D, texture)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8UI, width, height, 0, gl.RED_INTEGER, gl.UNSIGNED_BYTE, pixelData)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 
-        this.atlas = {
-            texture: atlasTexture,
-            boundaryLookup: atlasBoundaryLookup
-        }
+        return texture
     }
 
     private fill(buffer, data) {
@@ -266,7 +288,7 @@ class Renderer {
         let lightLevels = []
 
         function loadSideDef(sideDef: DoomSideDef, startVertex: DoomVertex, endVertex: DoomVertex, sector: DoomSector,
-                             twoSided, otherSector: DoomSector, boundaryLookup, colorMapCount) {
+                             twoSided, otherSector: DoomSector, boundaryLookup: Map<String, AtlasBounary>, colorMapCount) {
             let floorHeight = sector.floorHeight
             let ceilHeight = sector.ceilingHeight
             let lightLevel = sector.lightLevel
@@ -284,7 +306,7 @@ class Renderer {
                     triangles.push(prevVertexCount + triangleOffset)
                 }
 
-                let textureBoundary = boundaryLookup[textureName]
+                let textureBoundary = boundaryLookup.get(textureName)
                 let bLeft = textureBoundary[0]
                 let bTop = textureBoundary[1]
                 let bWidth = textureBoundary[2]
@@ -343,10 +365,10 @@ class Renderer {
             }
 
             if (right) {
-                loadSideDef(rightSideDef, startVertex, endVertex, rightSector, twoSided, leftSector, this.atlas.boundaryLookup, this.colorMapCount)
+                loadSideDef(rightSideDef, startVertex, endVertex, rightSector, twoSided, leftSector, this.wallAtlas.boundaryLookup, this.colorMapCount)
             }
             if (left) {
-                loadSideDef(leftSideDef, endVertex, startVertex, leftSector, twoSided, rightSector, this.atlas.boundaryLookup, this.colorMapCount)
+                loadSideDef(leftSideDef, endVertex, startVertex, leftSector, twoSided, rightSector, this.wallAtlas.boundaryLookup, this.colorMapCount)
             }
         }
 
@@ -383,6 +405,8 @@ class Renderer {
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+        this.renderSky(gl)
+
         this.setupAttrib(0, "vertexPosition", this.buffers.vertices, 3)
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.triangles)
@@ -397,17 +421,9 @@ class Renderer {
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, this.projectionMatrix)
         gl.uniform1ui(this.shaders[0].uniform["colorPalette"], Math.floor(this.colorPalette += dt) % 14)
 
-        gl.activeTexture(gl.TEXTURE0)
-        gl.bindTexture(gl.TEXTURE_2D, this.atlas.texture)
-        gl.uniform1i(this.shaders[0].uniform["atlasSampler"], 0)
-
-        gl.activeTexture(gl.TEXTURE1)
-        gl.bindTexture(gl.TEXTURE_2D, this.colorMapsTexture)
-        gl.uniform1i(this.shaders[0].uniform["colorMapsSampler"], 1)
-
-        gl.activeTexture(gl.TEXTURE2)
-        gl.bindTexture(gl.TEXTURE_2D, this.palettesTexture)
-        gl.uniform1i(this.shaders[0].uniform["palettesSampler"], 2)
+        this.bindTexture(this.wallAtlas.texture, 0, 0, "atlasSampler")
+        this.bindTexture(this.colorMapsTexture, 1, 0, "colorMapsSampler")
+        this.bindTexture(this.palettesTexture, 2, 0, "palettesSampler")
 
         if (this.mapLoaded) {
             gl.drawElements(gl.TRIANGLES, this.triangleCount, gl.UNSIGNED_SHORT, 0)
@@ -416,6 +432,44 @@ class Renderer {
         this.renderThings(gl)
 
         this.renderCoordSystem(gl)
+    }
+
+    private renderSky(gl) {
+        let vertices = [
+            -1,  1, 1,   1,  1, 1,   -1, -1, 1,
+            -1, -1, 1,   1,  1, 1,    1, -1, 1,
+        ]
+        // let texCoords = [
+        //     0,   0,      255, 0,      0, 127,
+        //     0, 127,      255, 0,      255, 127
+        // ]
+        let texCoords = [
+            0,   0,      1, 0,      0, 1,
+            0,   1,      1, 0,      1, 1
+        ]
+        let vertexBuffer = gl.createBuffer(); // Create an empty buffer object
+        this.setupAttrib(2, "vertexPosition", vertexBuffer, 3)
+        this.fill(vertexBuffer, vertices)
+
+        let texCoordBuffer = gl.createBuffer(); // Create an empty buffer object
+        this.setupAttrib(0, "textureCoord", texCoordBuffer, 2)
+        this.fill(texCoordBuffer, texCoords)
+
+        gl.useProgram(this.shaders[2].program)
+
+        this.bindTexture(this.skyAtlas.texture, 0, 2, "atlasSampler")
+        this.bindTexture(this.colorMapsTexture, 1, 2, "colorMapsSampler")
+        this.bindTexture(this.palettesTexture, 2, 2, "palettesSampler")
+
+        gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 3);
+    }
+
+    private bindTexture(texture: WebGLTexture, textureUnit: number, shader: number, uniform: string): void {
+        let gl = this.webgl
+        // this works, see: https://www.khronos.org/registry/OpenGL-Refpages/es1.1/xhtml/glActiveTexture.xml
+        gl.activeTexture(gl.TEXTURE0 + textureUnit)
+        gl.bindTexture(gl.TEXTURE_2D, texture)
+        gl.uniform1i(this.shaders[shader].uniform[uniform], textureUnit)
     }
 
     private renderThings(gl) {
@@ -451,7 +505,7 @@ class Renderer {
         gl.uniformMatrix4fv(this.shaders[1].uniform["viewMatrix"], false, this.camera.getTransformation())
         gl.uniformMatrix4fv(this.shaders[1].uniform["projectionMatrix"], false, this.projectionMatrix)
 
-        gl.drawArrays(gl.LINES, 0, 6);
+        gl.drawArrays(gl.LINES, 0, vertices.length / 3);
     }
 
     things: Transform[] = []
