@@ -76,7 +76,6 @@ class Game {
             .then(this.startLoop.bind(this))
     }
 
-    multi = 1
     private update0(dt) {
         this.audio.update(dt)
         if (this.paused) {
