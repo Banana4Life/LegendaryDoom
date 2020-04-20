@@ -165,7 +165,7 @@ class Renderer {
             let palette = palettes[i].colors
             for (let j = 0; j < palette.length; j++) {
                 for (let k = 0; k < DoomPalette.Channels; k++) {
-                    paletteArray[i * DoomPalette.Colors + j * DoomPalette.Channels + k] = palette[j][k]
+                    paletteArray[i * DoomPalette.Colors * DoomPalette.Channels + j * DoomPalette.Channels + k] = palette[j][k]
                 }
             }
         }
