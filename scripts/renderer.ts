@@ -83,6 +83,7 @@ class Renderer {
     readonly fov = deg2rad(90)
     readonly near = 0.1
     readonly far = 10000
+    projectionMatrix: number[]
 
     constructor(cameraTransform: Transform) {
         this.camera = cameraTransform
@@ -92,6 +93,9 @@ class Renderer {
         this.canvas = document.querySelector("canvas")
         this.canvas.width = this.canvas.clientWidth
         this.canvas.height = this.canvas.clientHeight
+
+        const aspect = this.canvas.clientWidth / this.canvas.clientHeight
+        this.projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
         this.webgl = this.canvas.getContext("webgl2")
         let gl = this.webgl
@@ -107,10 +111,10 @@ class Renderer {
         let shaders = [
             loadShader(gl, "shaders/simple",
                 ["vertexPosition", "textureCoord", "lightLevel"],
-                ["modelMatrix", "viewMatrix", "projectionMatrix", "atlasSampler", "colorMapsSampler", "palettesSampler"]),
-            //loadShader(gl, "shaders/simpler",
-            //    ["coordinates", "colors"],
-            //    ["modelMatrix", "viewMatrix", "projectionMatrix"])
+                ["modelMatrix", "viewMatrix", "projectionMatrix", "atlasSampler", "colorMapsSampler", "palettesSampler", "colorPalette"]),
+            loadShader(gl, "shaders/simpler",
+                ["coordinates", "colors"],
+                ["modelMatrix", "viewMatrix", "projectionMatrix"])
         ]
 
         this.buffers = {
@@ -247,6 +251,12 @@ class Renderer {
         }
     }
 
+    private fill(buffer, data) {
+        let gl = this.webgl;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
+    }
+
     loadMap(map) {
         let vertices = []
         let triangles = []
@@ -342,57 +352,50 @@ class Renderer {
 
         this.triangleCount = triangles.length
 
-        function fill(buffer, data) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW)
-        }
-
         let gl = this.webgl
 
-        fill(this.buffers.vertices, vertices)
+        this.fill(this.buffers.vertices, vertices)
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.triangles)
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangles), gl.STATIC_DRAW)
 
-        fill(this.buffers.textureCoords, textureCoords)
-        fill(this.buffers.textureBoundaries, textureBoundaries)
-        fill(this.buffers.textureTiling, textureTiling)
-        fill(this.buffers.lightLevels, lightLevels)
+        this.fill(this.buffers.textureCoords, textureCoords)
+        this.fill(this.buffers.textureBoundaries, textureBoundaries)
+        this.fill(this.buffers.textureTiling, textureTiling)
+        this.fill(this.buffers.lightLevels, lightLevels)
 
         this.mapLoaded = true
     }
 
+    private setupAttrib(shader: number, name: string, buffer: WebGLBuffer, size: number): void {
+        let gl = this.webgl
+        let attribute = this.shaders[shader].attribute[name]
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
+        gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 0, 0)
+        gl.enableVertexAttribArray(attribute)
+    }
+
+    colorPalette = 0
     render(dt) {
         let gl = this.webgl
-
-        const aspect = this.canvas.clientWidth / this.canvas.clientHeight
-        const projectionMatrix = mat4.perspective(this.fov, aspect, this.near, this.far)
 
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        let setupAttrib = (name: string, buffer, size) => {
-            let attribute = this.shaders[0].attribute[name]
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-            gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 0, 0)
-            gl.enableVertexAttribArray(attribute)
-        }
-
-        setupAttrib("vertexPosition", this.buffers.vertices, 3)
+        this.setupAttrib(0, "vertexPosition", this.buffers.vertices, 3)
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.triangles)
 
-        setupAttrib("textureCoord", this.buffers.textureCoords, 2)
-        //setupAttrib(this.shaders[0].attribute["textureBoundary"], this.buffers.textureBoundaries, 4)
-        //setupAttrib(this.shaders[0].attribute["textureTiling"], this.buffers.textureTiling, 2)
-        setupAttrib("lightLevel", this.buffers.lightLevels, 1)
+        this.setupAttrib(0, "textureCoord", this.buffers.textureCoords, 2)
+        this.setupAttrib(0, "lightLevel", this.buffers.lightLevels, 1)
 
         gl.useProgram(this.shaders[0].program)
 
         gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, mat4.identity)
         gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.camera.getTransformation())
-        gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, projectionMatrix)
+        gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, this.projectionMatrix)
+        gl.uniform1ui(this.shaders[0].uniform["colorPalette"], Math.floor(this.colorPalette += dt) % 14)
 
         gl.activeTexture(gl.TEXTURE0)
         gl.bindTexture(gl.TEXTURE_2D, this.atlas.texture)
@@ -410,39 +413,38 @@ class Renderer {
             gl.drawElements(gl.TRIANGLES, this.triangleCount, gl.UNSIGNED_SHORT, 0)
         }
 
-        if (false)
-        {
-            let size = 50000
-            var vertices = [
-                0, 0, 0,	size, 0, 0,
-                0, 0, 0,	0, size, 0,
-                0, 0, 0,	0, 0, size
-            ];
+        this.renderCoordSystem(gl)
+    }
 
-            var colors = [
-                1, 0, 0,	1, 0.6, 0,
-                0, 1, 0,	0.6, 1, 0,
-                0, 0, 1,	0, 0.6, 1
-            ];
+    private renderCoordSystem(gl) {
+        let size = 50000
+        let vertices = [
+            0, 0, 0,	size, 0, 0,
+            0, 0, 0,	0, size, 0,
+            0, 0, 0,	0, 0, size
+        ];
 
-            var vertex_buffer = gl.createBuffer(); // Create an empty buffer object
-            setupAttrib(this.shaders[1].attribute["coordinates"], vertex_buffer, 3)
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+        let colors = [
+            1, 0, 0,	1, 0.6, 0,
+            0, 1, 0,	0.6, 1, 0,
+            0, 0, 1,	0, 0.6, 1
+        ];
 
-            var color_buffer = gl.createBuffer(); // Create an empty buffer object
-            setupAttrib(this.shaders[1].attribute["colors"], color_buffer, 3)
-            gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer)
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW)
+        let vertexBuffer = gl.createBuffer(); // Create an empty buffer object
+        this.setupAttrib(1, "coordinates", vertexBuffer, 3)
+        this.fill(vertexBuffer, vertices)
 
-            gl.useProgram(this.shaders[1].program);
+        let colorBuffer = gl.createBuffer(); // Create an empty buffer object
+        this.setupAttrib(1, "colors", colorBuffer, 3)
+        this.fill(colorBuffer, colors)
 
-            gl.uniformMatrix4fv(this.shaders[1].uniform["modelMatrix"], false, mat4.identity)
-            gl.uniformMatrix4fv(this.shaders[1].uniform["viewMatrix"], false, this.camera.getTransformation())
-            gl.uniformMatrix4fv(this.shaders[1].uniform["projectionMatrix"], false, projectionMatrix)
+        gl.useProgram(this.shaders[1].program);
 
-            gl.drawArrays(gl.LINES, 0, 6);
-        }
+        gl.uniformMatrix4fv(this.shaders[1].uniform["modelMatrix"], false, mat4.identity)
+        gl.uniformMatrix4fv(this.shaders[1].uniform["viewMatrix"], false, this.camera.getTransformation())
+        gl.uniformMatrix4fv(this.shaders[1].uniform["projectionMatrix"], false, this.projectionMatrix)
+
+        gl.drawArrays(gl.LINES, 0, 6);
     }
 }
 
