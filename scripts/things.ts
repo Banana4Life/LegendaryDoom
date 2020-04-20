@@ -235,14 +235,12 @@ class Transform {
         if (Array.isArray(roll)) {
             [roll, pitch, yaw] = roll;
         }
-        const cr = Math.cos(roll * 0.5);
-        const sr = Math.sin(roll * 0.5);
-        const cp = Math.cos(pitch * 0.5);
-        const sp = Math.sin(pitch * 0.5);
-        const cy = Math.cos(yaw * 0.5);
-        const sy = Math.sin(yaw * 0.5);
-
-        console.log(`${roll}:${pitch}:${yaw}`)
+        // const cr = Math.cos(roll * 0.5);
+        // const sr = Math.sin(roll * 0.5);
+        // const cp = Math.cos(pitch * 0.5);
+        // const sp = Math.sin(pitch * 0.5);
+        // const cy = Math.cos(yaw * 0.5);
+        // const sy = Math.sin(yaw * 0.5);
 
         let q1 = this.angleAxisQuat(pitch, 1, 0, 0)
         let q2 = this.angleAxisQuat(yaw, 0, 1, 0)
