@@ -115,6 +115,8 @@ class Renderer {
             return
         }
 
+        // FIXME it seems that our triangle winding directions are inconsistent. expected winding would be counter-clockwise
+        // gl.enable(gl.CULL_FACE)
         gl.enable(gl.DEPTH_TEST)
         gl.depthFunc(gl.LEQUAL)
 
@@ -440,13 +442,13 @@ class Renderer {
         let heightPart = 0.5
         let lowerEnd = 1 - 2 * heightPart
         let vertices = [
-            -1,        1, 1,   1,  1, 1,   -1, lowerEnd, 1,
-            -1, lowerEnd, 1,   1,  1, 1,    1, lowerEnd, 1,
+            -1,        1, 1,   -1, lowerEnd, 1,    1,  1, 1,
+            -1, lowerEnd, 1,    1, lowerEnd, 1,    1,  1, 1,
         ]
         let skyboxCount = this.skyAtlas.boundaryLookup.size
         let texCoords = [
-            rf,        sky / skyboxCount,      1 + rf, sky / skyboxCount,      rf,     (sky + 1) / skyboxCount,
-            rf, (sky  + 1) / skyboxCount,      1 + rf, sky / skyboxCount,      1 + rf, (sky + 1) / skyboxCount
+            rf,        sky / skyboxCount,      rf,     (sky + 1) / skyboxCount,      1 + rf, sky / skyboxCount,
+            rf, (sky  + 1) / skyboxCount,      1 + rf, (sky + 1) / skyboxCount,      1 + rf, sky / skyboxCount,
         ]
         let vertexBuffer = gl.createBuffer(); // Create an empty buffer object
         this.setupAttrib(0, "vertexPosition", vertexBuffer, 3)
