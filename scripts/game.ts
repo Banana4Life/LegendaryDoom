@@ -76,6 +76,76 @@ class Game {
             .then(this.startLoop.bind(this))
     }
 
+    getHeight(x,y) {
+        let map = this.doomGame.maps[0]
+
+        function pointOnSide(x,y,node): number {
+            let	dx;
+            let	dy;
+            let	left;
+            let	right;
+
+            if (!node.partitionLineXSize)
+            {
+                if (x <= node.partitionLineX)
+                    return node.partitionLineYSize > 0 ? 1 : 0;
+
+                return node.partitionLineYSize < 0 ? 1 : 0;
+            }
+            if (!node.partitionLineYSize)
+            {
+                if (y <= node.partitionLineY)
+                    return node.partitionLineXSize < 0 ? 1 : 0;
+
+                return node.partitionLineXSize > 0 ? 1 : 0;
+            }
+
+            dx = (x - node.partitionLineX);
+            dy = (y - node.partitionLineY);
+
+            // Try to quickly decide by looking at sign bits.
+            if ( (node.partitionLineYSize ^ node.partitionLineXSize ^ dx ^ dy)&0x80000000 )
+            {
+                if  ( (node.partitionLineYSize ^ dx) & 0x80000000 )
+                {
+                    // (left is negative)
+                    return 1;
+                }
+                return 0;
+            }
+
+            function FixedMul( a, b )
+            {
+                return (a * b) >> 16;
+            }
+
+
+            left = FixedMul ( node.partitionLineYSize>>16 , dx );
+            right = FixedMul ( dy , node.partitionLineXSize>>16 );
+
+            if (right < left)
+            {
+                // front side
+                return 0;
+            }
+            // back side
+            return 1;
+        }
+        let NF_SUBSECTOR = 0x8000
+        let nodenum = map.nodes.length -1;
+        while (! (nodenum & NF_SUBSECTOR)) {
+            let node = map.nodes[nodenum]
+            let side = pointOnSide(x, y, node)
+            nodenum = side === 1 ? node.leftChildIndex : node.rightChildIndex
+        }
+        let subSector = map.subSectors[nodenum & ~NF_SUBSECTOR]
+        let segment = map.segments[subSector.firstSegmentIndex]
+        let lineDef = map.lineDefs[segment.lineDefIndex]
+        let sideDef = map.sideDefs[segment.direction === 0 ? lineDef.rightSideDefIndex : lineDef.leftSideDefIndex]
+        let sector = map.sectors[sideDef.sectorIndex] // TODO cache on subsector?
+        return sector.floorHeight
+    }
+
     private update0(dt) {
         this.audio.update(dt)
         if (this.paused) {
@@ -120,7 +190,11 @@ class Game {
         this.cameraTransform.moveForward(dx * dt, dy * dt, dz * dt)
         this.cameraTransform.setEulerAngles(0, this.cameraPitch, this.cameraYaw)
 
-        // TODO actual game logic
+        let [x,y,z] = this.cameraTransform.getPosition()
+
+        let targetHeight = this.getHeight(-z, -x)
+        this.cameraTransform.moveForward(0,(-targetHeight - y -41) * dt * 20,0)
+
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
             // game.audio.play(Sound.PISTOL, 0.2)
             this.audio.play(Sound.PLASMA, 0.2, true)
