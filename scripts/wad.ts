@@ -46,8 +46,6 @@ class WADHeader {
 }
 
 class WAD {
-    static readonly FileMimeType = "application/x-doom-wad"
-
     readonly header: WADHeader
     readonly dictionary: WADDictionary
 
@@ -73,9 +71,6 @@ class WADLump {
 type WADDictionary = WADLump[]
 
 function parseWad(file: File): Promise<WAD> {
-    if (file.type !== WAD.FileMimeType) {
-        return Promise.reject(`Unsupported mime type! Requires: ${WAD.FileMimeType}, but was ${file.type}`)
-    }
     return file.arrayBuffer().then(buf => {
         let memory = new Uint8Array(buf)
         return parseHeader(memory, 0).then(header => {

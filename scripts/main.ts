@@ -49,7 +49,7 @@ function getGameContent(): Promise<File> {
             }
             return Promise.reject("Server did not find the WAD file!")
         })
-        .then(blob => new File([blob], fileName, {type: WAD.FileMimeType}))
+        .then(blob => new File([blob], fileName))
         .catch(err => {
             console.log("Failed to load the remote content:", err)
             return awaitUserContent()
