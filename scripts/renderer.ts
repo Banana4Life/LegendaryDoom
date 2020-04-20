@@ -122,9 +122,6 @@ class Renderer {
             loadShader(gl, "shaders/simpler",
                 ["coordinates", "colors"],
                 ["modelMatrix", "viewMatrix", "projectionMatrix"]),
-            loadShader(gl, "shaders/sky",
-                ["vertexPosition", "textureCoord"],
-                ["atlasSampler", "colorMapsSampler", "palettesSampler", "colorPalette"]),
         ]
 
         this.buffers = {
@@ -448,18 +445,22 @@ class Renderer {
             0,   1,      1, 0,      1, 1
         ]
         let vertexBuffer = gl.createBuffer(); // Create an empty buffer object
-        this.setupAttrib(2, "vertexPosition", vertexBuffer, 3)
+        this.setupAttrib(0, "vertexPosition", vertexBuffer, 3)
         this.fill(vertexBuffer, vertices)
 
         let texCoordBuffer = gl.createBuffer(); // Create an empty buffer object
         this.setupAttrib(0, "textureCoord", texCoordBuffer, 2)
         this.fill(texCoordBuffer, texCoords)
 
-        gl.useProgram(this.shaders[2].program)
+        gl.useProgram(this.shaders[0].program)
 
-        this.bindTexture(this.skyAtlas.texture, 0, 2, "atlasSampler")
-        this.bindTexture(this.colorMapsTexture, 1, 2, "colorMapsSampler")
-        this.bindTexture(this.palettesTexture, 2, 2, "palettesSampler")
+        gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, mat4.identity)
+        gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, mat4.identity)
+        gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, mat4.identity)
+
+        this.bindTexture(this.skyAtlas.texture, 0, 0, "atlasSampler")
+        this.bindTexture(this.colorMapsTexture, 1, 0, "colorMapsSampler")
+        this.bindTexture(this.palettesTexture, 2, 0, "palettesSampler")
 
         gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 3);
     }
