@@ -106,11 +106,11 @@ class Renderer {
 
         let shaders = [
             loadShader(gl, "shaders/simple",
-                ["vertexPosition", "textureCoord", "textureBoundary", "textureTiling", "lightLevel"],
+                ["vertexPosition", "textureCoord", "lightLevel"],
                 ["modelMatrix", "viewMatrix", "projectionMatrix", "atlasSampler", "colorMapsSampler", "palettesSampler"]),
-            loadShader(gl, "shaders/simpler",
-                ["coordinates", "colors"],
-                ["modelMatrix", "viewMatrix", "projectionMatrix"])
+            //loadShader(gl, "shaders/simpler",
+            //    ["coordinates", "colors"],
+            //    ["modelMatrix", "viewMatrix", "projectionMatrix"])
         ]
 
         this.buffers = {
@@ -372,20 +372,21 @@ class Renderer {
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        function setupAttrib(attribute, buffer, size) {
+        let setupAttrib = (name: string, buffer, size) => {
+            let attribute = this.shaders[0].attribute[name]
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
             gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 0, 0)
             gl.enableVertexAttribArray(attribute)
         }
 
-        setupAttrib(this.shaders[0].attribute["vertexPosition"], this.buffers.vertices, 3)
+        setupAttrib("vertexPosition", this.buffers.vertices, 3)
 
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.triangles)
 
-        setupAttrib(this.shaders[0].attribute["textureCoord"], this.buffers.textureCoords, 2)
+        setupAttrib("textureCoord", this.buffers.textureCoords, 2)
         //setupAttrib(this.shaders[0].attribute["textureBoundary"], this.buffers.textureBoundaries, 4)
         //setupAttrib(this.shaders[0].attribute["textureTiling"], this.buffers.textureTiling, 2)
-        setupAttrib(this.shaders[0].attribute["lightLevel"], this.buffers.lightLevels, 1)
+        setupAttrib("lightLevel", this.buffers.lightLevels, 1)
 
         gl.useProgram(this.shaders[0].program)
 
@@ -409,7 +410,7 @@ class Renderer {
             gl.drawElements(gl.TRIANGLES, this.triangleCount, gl.UNSIGNED_SHORT, 0)
         }
 
-        if (true)
+        if (false)
         {
             let size = 50000
             var vertices = [
