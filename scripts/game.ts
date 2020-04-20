@@ -76,6 +76,7 @@ class Game {
             .then(this.startLoop.bind(this))
     }
 
+    multi = 1
     private update0(dt) {
         this.audio.update(dt)
         if (this.paused) {
@@ -106,11 +107,19 @@ class Game {
         }
 
         let [dyaw, dpitch] = this.controls.getMouseChange()
-        this.cameraPitch += deg2rad(dpitch * dt)
-        this.cameraYaw += deg2rad(dyaw * dt)
+
+
+        // this.cameraPitch += deg2rad(this.multi * 90 * dt) // Bob
+        this.cameraPitch += deg2rad(dpitch * dt * 2)
+        this.cameraYaw += deg2rad(dyaw * dt * 2)
+        if (this.cameraPitch < deg2rad(-45)) {
+            this.cameraPitch = deg2rad(-45)
+        }if (this.cameraPitch > deg2rad(45)) {
+            this.cameraPitch = deg2rad(45)
+        }
 
         this.cameraTransform.moveForward(dx * dt, dy * dt, dz * dt)
-        this.cameraTransform.setEulerAngles(this.cameraPitch, this.cameraYaw, 0)
+        this.cameraTransform.setEulerAngles(0, this.cameraPitch, this.cameraYaw)
 
         // TODO actual game logic
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {

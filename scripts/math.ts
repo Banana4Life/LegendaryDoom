@@ -48,7 +48,20 @@ const mat4 = {
         return b
     },
 
-    multiply: function (a, b) {
+    multiplyQuaternions: function( qa, qb ) {
+        let qaw = qa[0], qax = qa[1], qay = qa[2], qaz = qa[3];
+        let qbw = qb[0], qbx = qb[1], qby = qb[2], qbz = qb[3];
+
+        return [
+            qax * qbw + qaw * qbx + qay * qbz - qaz * qby,
+            qay * qbw + qaw * qby + qaz * qbx - qax * qbz,
+            qaz * qbw + qaw * qbz + qax * qby - qay * qbx,
+            qaw * qbw - qax * qbx - qay * qby - qaz * qbz,
+        ]
+    },
+
+
+        multiply: function (a, b) {
         return [
             a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12], a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13], a[0] * b[2] + a[1] * b[6] + a[2] * b[10] + a[3] * b[14], a[0] * b[3] + a[1] * b[7] + a[2] * b[11] + a[3] * b[15],
             a[4] * b[0] + a[5] * b[4] + a[6] * b[8] + a[7] * b[12], a[4] * b[1] + a[5] * b[5] + a[6] * b[9] + a[7] * b[13], a[4] * b[2] + a[5] * b[6] + a[6] * b[10] + a[7] * b[14], a[4] * b[3] + a[5] * b[7] + a[6] * b[11] + a[7] * b[15],

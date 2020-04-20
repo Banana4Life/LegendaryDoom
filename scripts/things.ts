@@ -116,15 +116,19 @@ class Transform {
     private rotZ: number = 0
     private rotation: number[]
 
+    private baseRotation: number[]
+
     private posX: number = 0
     private posY: number = 0
     private posZ: number = 0
     private translation: number[]
 
     constructor() {
+        this.baseRotation = [1,0,0,0]
+
         this.setPosition(0, 0, 0);
         this.setScale(1, 1, 1);
-        this.setAngleAxis(0, 0, 0, 1);
+        this.setAngleAxis(0, 0, 0, 0);
 
         this.dirty = true;
         this.transform = mat4.identity;
@@ -188,7 +192,8 @@ class Transform {
         this.rotX = x;
         this.rotY = y;
         this.rotZ = z;
-        this.rotation = mat4.rotation(w, x, y, z);
+
+        this.rotation = mat4.rotation(mat4.multiplyQuaternions(this.baseRotation, this.getRotationQuaternion()));
 
         this.dirty = true;
     }
@@ -202,6 +207,13 @@ class Transform {
         let s = Math.sin(halfAngle);
 
         this.setRotationQuaternion(Math.cos(halfAngle), x * s, y * s, z * s);
+    }
+
+    angleAxisQuat(angle, x, y, z) {
+        let halfAngle = angle / 2.0;
+        let s = Math.sin(halfAngle);
+
+        return [Math.cos(halfAngle), x * s, y * s, z * s]
     }
 
     getAngleAxis() {
@@ -228,12 +240,21 @@ class Transform {
         const cy = Math.cos(yaw * 0.5);
         const sy = Math.sin(yaw * 0.5);
 
-        this.setRotationQuaternion(
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            sr * cp * sy + cr * sp * cy,
-            cr * cp * sy - sr * sp * cy
-        )
+        console.log(`${roll}:${pitch}:${yaw}`)
+
+        let q1 = this.angleAxisQuat(pitch, 1, 0, 0)
+        let q2 = this.angleAxisQuat(yaw, 0, 1, 0)
+        let q3 = this.angleAxisQuat(roll, 0, 0, -1)
+
+        let [qw, qx, qy ,qz] = mat4.multiplyQuaternions(this.baseRotation, mat4.multiplyQuaternions(mat4.multiplyQuaternions(q1,q2), q3))
+        this.setRotationQuaternion(qw, qx, qy, qz)
+
+        // this.setRotationQuaternion(
+        //     cr * cp * cy + sr * sp * sy,
+        //     sr * cp * cy - cr * sp * sy,
+        //     sr * cp * sy + cr * sp * cy,
+        //     cr * cp * sy - sr * sp * cy
+        // )
     }
 
     getEulerAngles() {
