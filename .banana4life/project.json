@@ -1,0 +1,13 @@
+{
+  "name": "LegendaryDoom",
+  "description": "We are all doomed!",
+  "jam": {
+    "name": "Ludum Dare",
+    "number": 46,
+    "theme": "Keep it alive",
+    "site": "https://ldjam.com/events/ludum-dare/46/legendarydoom",
+    "comments": []
+  },
+  "web": "https://banana4life.github.io/LegendaryDoom/",
+  "authors": []
+}
