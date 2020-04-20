@@ -39,6 +39,14 @@ class DoomGame {
         return DoomSpriteSet.parse(this.wad.dictionary, prefix)
     }
 
+    getArbitraryPicture(name: string): DoomPicture | null {
+        let lump = DoomGame.findLump(this.wad.dictionary, name)
+        if (lump === null) {
+            return null
+        }
+        return DoomPicture.fromPatch(lump.name, lump.data)
+    }
+
     static findLumpIndex(dict: WADDictionary, name: string): number {
         let upper = name.toUpperCase()
         for (let i = dict.length - 1; i >= 0; --i) {
