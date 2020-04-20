@@ -107,7 +107,10 @@ class Renderer {
         let shaders = [
             loadShader(gl, "shaders/simple",
                 ["vertexPosition", "textureCoord", "textureBoundary", "textureTiling", "lightLevel"],
-                ["modelMatrix", "viewMatrix", "projectionMatrix", "atlasSampler", "colorMapsSampler", "palettesSampler"])
+                ["modelMatrix", "viewMatrix", "projectionMatrix", "atlasSampler", "colorMapsSampler", "palettesSampler"]),
+            loadShader(gl, "shaders/simpler",
+                ["coordinates", "colors"],
+                ["modelMatrix", "viewMatrix", "projectionMatrix"])
         ]
 
         this.buffers = {
@@ -404,6 +407,40 @@ class Renderer {
 
         if (this.mapLoaded) {
             gl.drawElements(gl.TRIANGLES, this.triangleCount, gl.UNSIGNED_SHORT, 0)
+        }
+
+        if (true)
+        {
+            let size = 50000
+            var vertices = [
+                0, 0, 0,	size, 0, 0,
+                0, 0, 0,	0, size, 0,
+                0, 0, 0,	0, 0, size
+            ];
+
+            var colors = [
+                1, 0, 0,	1, 0.6, 0,
+                0, 1, 0,	0.6, 1, 0,
+                0, 0, 1,	0, 0.6, 1
+            ];
+
+            var vertex_buffer = gl.createBuffer(); // Create an empty buffer object
+            setupAttrib(this.shaders[1].attribute["coordinates"], vertex_buffer, 3)
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertex_buffer)
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW)
+
+            var color_buffer = gl.createBuffer(); // Create an empty buffer object
+            setupAttrib(this.shaders[1].attribute["colors"], color_buffer, 3)
+            gl.bindBuffer(gl.ARRAY_BUFFER, color_buffer)
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW)
+
+            gl.useProgram(this.shaders[1].program);
+
+            gl.uniformMatrix4fv(this.shaders[1].uniform["modelMatrix"], false, mat4.identity)
+            gl.uniformMatrix4fv(this.shaders[1].uniform["viewMatrix"], false, this.camera.getTransformation())
+            gl.uniformMatrix4fv(this.shaders[1].uniform["projectionMatrix"], false, projectionMatrix)
+
+            gl.drawArrays(gl.LINES, 0, 6);
         }
     }
 }

@@ -30,7 +30,11 @@ class Game {
     togglePause() {
         this.audio.toggleMusic()
         this.paused = !this.paused
-        console.log("Paused? " + this.paused)
+        if (this.paused) {
+            logToGameConsole("Game paused!")
+        } else {
+            logToGameConsole("Game resumed!")
+        }
         document.querySelectorAll(".paused").forEach(e => {
             if (this.paused) {
                 e.classList.add("is-paused")
