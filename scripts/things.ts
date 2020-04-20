@@ -23,6 +23,9 @@ class Transform {
     private posZ: number = 0
     private translation: number[]
 
+    thing: DoomThing
+    mobj
+
     constructor() {
         this.baseRotation = [1,0,0,0]
 

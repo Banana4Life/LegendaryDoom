@@ -94,10 +94,18 @@ let MF_TRANSSHIFT = 26
 // radius: $1*$2
 // height: "([0-9]+)\*([A-Z]+)"
 // height: $1*$2
-
+// doomednum: "(-?[0-9]+)"
+// doomednum: $1
+function mobjobinfos() {
+    let map = {}
+    for (const mobjinfo of mobjinfos) {
+        map[mobjinfo.doomednum] = mobjinfo
+    }
+    return map
+}
 let mobjinfos = [
     {		// MT_PLAYER
-        doomednum: "-1",
+        doomednum: 1,
         spawnstate: "S_PLAY",
         spawnhealth: "100",
         seestate: "S_PLAY_RUN1",
@@ -123,7 +131,7 @@ let mobjinfos = [
     },
 
     {		// MT_POSSESSED
-        doomednum: "3004",
+        doomednum: 3004,
         spawnstate: "S_POSS_STND",
         spawnhealth: "20",
         seestate: "S_POSS_RUN1",
@@ -149,7 +157,7 @@ let mobjinfos = [
     },
 
     {		// MT_SHOTGUY
-        doomednum: "9",
+        doomednum: 9,
         spawnstate: "S_SPOS_STND",
         spawnhealth: "30",
         seestate: "S_SPOS_RUN1",
@@ -175,7 +183,7 @@ let mobjinfos = [
     },
 
     {		// MT_VILE
-        doomednum: "64",
+        doomednum: 64,
         spawnstate: "S_VILE_STND",
         spawnhealth: "700",
         seestate: "S_VILE_RUN1",
@@ -201,7 +209,7 @@ let mobjinfos = [
     },
 
     {		// MT_FIRE
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_FIRE1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -227,7 +235,7 @@ let mobjinfos = [
     },
 
     {		// MT_UNDEAD
-        doomednum: "66",
+        doomednum: 66,
         spawnstate: "S_SKEL_STND",
         spawnhealth: "300",
         seestate: "S_SKEL_RUN1",
@@ -253,7 +261,7 @@ let mobjinfos = [
     },
 
     {		// MT_TRACER
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_TRACER",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -279,7 +287,7 @@ let mobjinfos = [
     },
 
     {		// MT_SMOKE
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_SMOKE1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -305,7 +313,7 @@ let mobjinfos = [
     },
 
     {		// MT_FATSO
-        doomednum: "67",
+        doomednum: 67,
         spawnstate: "S_FATT_STND",
         spawnhealth: "600",
         seestate: "S_FATT_RUN1",
@@ -331,7 +339,7 @@ let mobjinfos = [
     },
 
     {		// MT_FATSHOT
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_FATSHOT1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -357,7 +365,7 @@ let mobjinfos = [
     },
 
     {		// MT_CHAINGUY
-        doomednum: "65",
+        doomednum: 65,
         spawnstate: "S_CPOS_STND",
         spawnhealth: "70",
         seestate: "S_CPOS_RUN1",
@@ -383,7 +391,7 @@ let mobjinfos = [
     },
 
     {		// MT_TROOP
-        doomednum: "3001",
+        doomednum: 3001,
         spawnstate: "S_TROO_STND",
         spawnhealth: "60",
         seestate: "S_TROO_RUN1",
@@ -409,7 +417,7 @@ let mobjinfos = [
     },
 
     {		// MT_SERGEANT
-        doomednum: "3002",
+        doomednum: 3002,
         spawnstate: "S_SARG_STND",
         spawnhealth: "150",
         seestate: "S_SARG_RUN1",
@@ -435,7 +443,7 @@ let mobjinfos = [
     },
 
     {		// MT_SHADOWS
-        doomednum: "58",
+        doomednum: 58,
         spawnstate: "S_SARG_STND",
         spawnhealth: "150",
         seestate: "S_SARG_RUN1",
@@ -461,7 +469,7 @@ let mobjinfos = [
     },
 
     {		// MT_HEAD
-        doomednum: "3005",
+        doomednum: 3005,
         spawnstate: "S_HEAD_STND",
         spawnhealth: "400",
         seestate: "S_HEAD_RUN1",
@@ -487,7 +495,7 @@ let mobjinfos = [
     },
 
     {		// MT_BRUISER
-        doomednum: "3003",
+        doomednum: 3003,
         spawnstate: "S_BOSS_STND",
         spawnhealth: "1000",
         seestate: "S_BOSS_RUN1",
@@ -513,7 +521,7 @@ let mobjinfos = [
     },
 
     {		// MT_BRUISERSHOT
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_BRBALL1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -539,7 +547,7 @@ let mobjinfos = [
     },
 
     {		// MT_KNIGHT
-        doomednum: "69",
+        doomednum: 69,
         spawnstate: "S_BOS2_STND",
         spawnhealth: "500",
         seestate: "S_BOS2_RUN1",
@@ -565,7 +573,7 @@ let mobjinfos = [
     },
 
     {		// MT_SKULL
-        doomednum: "3006",
+        doomednum: 3006,
         spawnstate: "S_SKULL_STND",
         spawnhealth: "100",
         seestate: "S_SKULL_RUN1",
@@ -591,7 +599,7 @@ let mobjinfos = [
     },
 
     {		// MT_SPIDER
-        doomednum: "7",
+        doomednum: 7,
         spawnstate: "S_SPID_STND",
         spawnhealth: "3000",
         seestate: "S_SPID_RUN1",
@@ -617,7 +625,7 @@ let mobjinfos = [
     },
 
     {		// MT_BABY
-        doomednum: "68",
+        doomednum: 68,
         spawnstate: "S_BSPI_STND",
         spawnhealth: "500",
         seestate: "S_BSPI_SIGHT",
@@ -643,7 +651,7 @@ let mobjinfos = [
     },
 
     {		// MT_CYBORG
-        doomednum: "16",
+        doomednum: 16,
         spawnstate: "S_CYBER_STND",
         spawnhealth: "4000",
         seestate: "S_CYBER_RUN1",
@@ -669,7 +677,7 @@ let mobjinfos = [
     },
 
     {		// MT_PAIN
-        doomednum: "71",
+        doomednum: 71,
         spawnstate: "S_PAIN_STND",
         spawnhealth: "400",
         seestate: "S_PAIN_RUN1",
@@ -695,7 +703,7 @@ let mobjinfos = [
     },
 
     {		// MT_WOLFSS
-        doomednum: "84",
+        doomednum: 84,
         spawnstate: "S_SSWV_STND",
         spawnhealth: "50",
         seestate: "S_SSWV_RUN1",
@@ -721,7 +729,7 @@ let mobjinfos = [
     },
 
     {		// MT_KEEN
-        doomednum: "72",
+        doomednum: 72,
         spawnstate: "S_KEENSTND",
         spawnhealth: "100",
         seestate: "S_NULL",
@@ -747,7 +755,7 @@ let mobjinfos = [
     },
 
     {		// MT_BOSSBRAIN
-        doomednum: "88",
+        doomednum: 88,
         spawnstate: "S_BRAIN",
         spawnhealth: "250",
         seestate: "S_NULL",
@@ -773,7 +781,7 @@ let mobjinfos = [
     },
 
     {		// MT_BOSSSPIT
-        doomednum: "89",
+        doomednum: 89,
         spawnstate: "S_BRAINEYE",
         spawnhealth: "1000",
         seestate: "S_BRAINEYESEE",
@@ -799,7 +807,7 @@ let mobjinfos = [
     },
 
     {		// MT_BOSSTARGET
-        doomednum: "87",
+        doomednum: 87,
         spawnstate: "S_NULL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -825,7 +833,7 @@ let mobjinfos = [
     },
 
     {		// MT_SPAWNSHOT
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_SPAWN1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -851,7 +859,7 @@ let mobjinfos = [
     },
 
     {		// MT_SPAWNFIRE
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_SPAWNFIRE1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -877,7 +885,7 @@ let mobjinfos = [
     },
 
     {		// MT_BARREL
-        doomednum: "2035",
+        doomednum: 2035,
         spawnstate: "S_BAR1",
         spawnhealth: "20",
         seestate: "S_NULL",
@@ -903,7 +911,7 @@ let mobjinfos = [
     },
 
     {		// MT_TROOPSHOT
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_TBALL1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -929,7 +937,7 @@ let mobjinfos = [
     },
 
     {		// MT_HEADSHOT
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_RBALL1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -955,7 +963,7 @@ let mobjinfos = [
     },
 
     {		// MT_ROCKET
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_ROCKET",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -981,7 +989,7 @@ let mobjinfos = [
     },
 
     {		// MT_PLASMA
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_PLASBALL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1007,7 +1015,7 @@ let mobjinfos = [
     },
 
     {		// MT_BFG
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_BFGSHOT",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1033,7 +1041,7 @@ let mobjinfos = [
     },
 
     {		// MT_ARACHPLAZ
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_ARACH_PLAZ",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1059,7 +1067,7 @@ let mobjinfos = [
     },
 
     {		// MT_PUFF
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_PUFF1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1085,7 +1093,7 @@ let mobjinfos = [
     },
 
     {		// MT_BLOOD
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_BLOOD1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1111,7 +1119,7 @@ let mobjinfos = [
     },
 
     {		// MT_TFOG
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_TFOG",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1137,7 +1145,7 @@ let mobjinfos = [
     },
 
     {		// MT_IFOG
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_IFOG",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1163,7 +1171,7 @@ let mobjinfos = [
     },
 
     {		// MT_TELEPORTMAN
-        doomednum: "14",
+        doomednum: 14,
         spawnstate: "S_NULL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1189,7 +1197,7 @@ let mobjinfos = [
     },
 
     {		// MT_EXTRABFG
-        doomednum: "-1",
+        doomednum: -1,
         spawnstate: "S_BFGEXP",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1215,7 +1223,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC0
-        doomednum: "2018",
+        doomednum: 2018,
         spawnstate: "S_ARM1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1241,7 +1249,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC1
-        doomednum: "2019",
+        doomednum: 2019,
         spawnstate: "S_ARM2",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1267,7 +1275,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC2
-        doomednum: "2014",
+        doomednum: 2014,
         spawnstate: "S_BON1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1293,7 +1301,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC3
-        doomednum: "2015",
+        doomednum: 2015,
         spawnstate: "S_BON2",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1319,7 +1327,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC4
-        doomednum: "5",
+        doomednum: 5,
         spawnstate: "S_BKEY",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1345,7 +1353,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC5
-        doomednum: "13",
+        doomednum: 13,
         spawnstate: "S_RKEY",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1371,7 +1379,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC6
-        doomednum: "6",
+        doomednum: 6,
         spawnstate: "S_YKEY",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1397,7 +1405,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC7
-        doomednum: "39",
+        doomednum: 39,
         spawnstate: "S_YSKULL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1423,7 +1431,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC8
-        doomednum: "38",
+        doomednum: 38,
         spawnstate: "S_RSKULL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1449,7 +1457,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC9
-        doomednum: "40",
+        doomednum: 40,
         spawnstate: "S_BSKULL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1475,7 +1483,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC10
-        doomednum: "2011",
+        doomednum: 2011,
         spawnstate: "S_STIM",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1501,7 +1509,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC11
-        doomednum: "2012",
+        doomednum: 2012,
         spawnstate: "S_MEDI",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1527,7 +1535,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC12
-        doomednum: "2013",
+        doomednum: 2013,
         spawnstate: "S_SOUL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1553,7 +1561,7 @@ let mobjinfos = [
     },
 
     {		// MT_INV
-        doomednum: "2022",
+        doomednum: 2022,
         spawnstate: "S_PINV",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1579,7 +1587,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC13
-        doomednum: "2023",
+        doomednum: 2023,
         spawnstate: "S_PSTR",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1605,7 +1613,7 @@ let mobjinfos = [
     },
 
     {		// MT_INS
-        doomednum: "2024",
+        doomednum: 2024,
         spawnstate: "S_PINS",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1631,7 +1639,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC14
-        doomednum: "2025",
+        doomednum: 2025,
         spawnstate: "S_SUIT",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1657,7 +1665,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC15
-        doomednum: "2026",
+        doomednum: 2026,
         spawnstate: "S_PMAP",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1683,7 +1691,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC16
-        doomednum: "2045",
+        doomednum: 2045,
         spawnstate: "S_PVIS",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1709,7 +1717,7 @@ let mobjinfos = [
     },
 
     {		// MT_MEGA
-        doomednum: "83",
+        doomednum: 83,
         spawnstate: "S_MEGA",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1735,7 +1743,7 @@ let mobjinfos = [
     },
 
     {		// MT_CLIP
-        doomednum: "2007",
+        doomednum: 2007,
         spawnstate: "S_CLIP",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1761,7 +1769,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC17
-        doomednum: "2048",
+        doomednum: 2048,
         spawnstate: "S_AMMO",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1787,7 +1795,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC18
-        doomednum: "2010",
+        doomednum: 2010,
         spawnstate: "S_ROCK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1813,7 +1821,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC19
-        doomednum: "2046",
+        doomednum: 2046,
         spawnstate: "S_BROK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1839,7 +1847,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC20
-        doomednum: "2047",
+        doomednum: 2047,
         spawnstate: "S_CELL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1865,7 +1873,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC21
-        doomednum: "17",
+        doomednum: 17,
         spawnstate: "S_CELP",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1891,7 +1899,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC22
-        doomednum: "2008",
+        doomednum: 2008,
         spawnstate: "S_SHEL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1917,7 +1925,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC23
-        doomednum: "2049",
+        doomednum: 2049,
         spawnstate: "S_SBOX",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1943,7 +1951,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC24
-        doomednum: "8",
+        doomednum: 8,
         spawnstate: "S_BPAK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1969,7 +1977,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC25
-        doomednum: "2006",
+        doomednum: 2006,
         spawnstate: "S_BFUG",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -1995,7 +2003,7 @@ let mobjinfos = [
     },
 
     {		// MT_CHAINGUN
-        doomednum: "2002",
+        doomednum: 2002,
         spawnstate: "S_MGUN",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2021,7 +2029,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC26
-        doomednum: "2005",
+        doomednum: 2005,
         spawnstate: "S_CSAW",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2047,7 +2055,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC27
-        doomednum: "2003",
+        doomednum: 2003,
         spawnstate: "S_LAUN",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2073,7 +2081,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC28
-        doomednum: "2004",
+        doomednum: 2004,
         spawnstate: "S_PLAS",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2099,7 +2107,7 @@ let mobjinfos = [
     },
 
     {		// MT_SHOTGUN
-        doomednum: "2001",
+        doomednum: 2001,
         spawnstate: "S_SHOT",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2125,7 +2133,7 @@ let mobjinfos = [
     },
 
     {		// MT_SUPERSHOTGUN
-        doomednum: "82",
+        doomednum: 82,
         spawnstate: "S_SHOT2",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2151,7 +2159,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC29
-        doomednum: "85",
+        doomednum: 85,
         spawnstate: "S_TECHLAMP",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2177,7 +2185,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC30
-        doomednum: "86",
+        doomednum: 86,
         spawnstate: "S_TECH2LAMP",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2203,7 +2211,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC31
-        doomednum: "2028",
+        doomednum: 2028,
         spawnstate: "S_COLU",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2229,7 +2237,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC32
-        doomednum: "30",
+        doomednum: 30,
         spawnstate: "S_TALLGRNCOL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2255,7 +2263,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC33
-        doomednum: "31",
+        doomednum: 31,
         spawnstate: "S_SHRTGRNCOL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2281,7 +2289,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC34
-        doomednum: "32",
+        doomednum: 32,
         spawnstate: "S_TALLREDCOL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2307,7 +2315,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC35
-        doomednum: "33",
+        doomednum: 33,
         spawnstate: "S_SHRTREDCOL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2333,7 +2341,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC36
-        doomednum: "37",
+        doomednum: 37,
         spawnstate: "S_SKULLCOL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2359,7 +2367,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC37
-        doomednum: "36",
+        doomednum: 36,
         spawnstate: "S_HEARTCOL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2385,7 +2393,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC38
-        doomednum: "41",
+        doomednum: 41,
         spawnstate: "S_EVILEYE",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2411,7 +2419,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC39
-        doomednum: "42",
+        doomednum: 42,
         spawnstate: "S_FLOATSKULL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2437,7 +2445,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC40
-        doomednum: "43",
+        doomednum: 43,
         spawnstate: "S_TORCHTREE",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2463,7 +2471,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC41
-        doomednum: "44",
+        doomednum: 44,
         spawnstate: "S_BLUETORCH",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2489,7 +2497,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC42
-        doomednum: "45",
+        doomednum: 45,
         spawnstate: "S_GREENTORCH",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2515,7 +2523,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC43
-        doomednum: "46",
+        doomednum: 46,
         spawnstate: "S_REDTORCH",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2541,7 +2549,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC44
-        doomednum: "55",
+        doomednum: 55,
         spawnstate: "S_BTORCHSHRT",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2567,7 +2575,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC45
-        doomednum: "56",
+        doomednum: 56,
         spawnstate: "S_GTORCHSHRT",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2593,7 +2601,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC46
-        doomednum: "57",
+        doomednum: 57,
         spawnstate: "S_RTORCHSHRT",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2619,7 +2627,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC47
-        doomednum: "47",
+        doomednum: 47,
         spawnstate: "S_STALAGTITE",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2645,7 +2653,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC48
-        doomednum: "48",
+        doomednum: 48,
         spawnstate: "S_TECHPILLAR",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2671,7 +2679,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC49
-        doomednum: "34",
+        doomednum: 34,
         spawnstate: "S_CANDLESTIK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2697,7 +2705,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC50
-        doomednum: "35",
+        doomednum: 35,
         spawnstate: "S_CANDELABRA",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2723,7 +2731,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC51
-        doomednum: "49",
+        doomednum: 49,
         spawnstate: "S_BLOODYTWITCH",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2749,7 +2757,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC52
-        doomednum: "50",
+        doomednum: 50,
         spawnstate: "S_MEAT2",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2775,7 +2783,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC53
-        doomednum: "51",
+        doomednum: 51,
         spawnstate: "S_MEAT3",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2801,7 +2809,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC54
-        doomednum: "52",
+        doomednum: 52,
         spawnstate: "S_MEAT4",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2827,7 +2835,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC55
-        doomednum: "53",
+        doomednum: 53,
         spawnstate: "S_MEAT5",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2853,7 +2861,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC56
-        doomednum: "59",
+        doomednum: 59,
         spawnstate: "S_MEAT2",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2879,7 +2887,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC57
-        doomednum: "60",
+        doomednum: 60,
         spawnstate: "S_MEAT4",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2905,7 +2913,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC58
-        doomednum: "61",
+        doomednum: 61,
         spawnstate: "S_MEAT3",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2931,7 +2939,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC59
-        doomednum: "62",
+        doomednum: 62,
         spawnstate: "S_MEAT5",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2957,7 +2965,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC60
-        doomednum: "63",
+        doomednum: 63,
         spawnstate: "S_BLOODYTWITCH",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -2983,7 +2991,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC61
-        doomednum: "22",
+        doomednum: 22,
         spawnstate: "S_HEAD_DIE6",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3009,7 +3017,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC62
-        doomednum: "15",
+        doomednum: 15,
         spawnstate: "S_PLAY_DIE7",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3035,7 +3043,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC63
-        doomednum: "18",
+        doomednum: 18,
         spawnstate: "S_POSS_DIE5",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3061,7 +3069,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC64
-        doomednum: "21",
+        doomednum: 21,
         spawnstate: "S_SARG_DIE6",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3087,7 +3095,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC65
-        doomednum: "23",
+        doomednum: 23,
         spawnstate: "S_SKULL_DIE6",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3113,7 +3121,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC66
-        doomednum: "20",
+        doomednum: 20,
         spawnstate: "S_TROO_DIE5",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3139,7 +3147,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC67
-        doomednum: "19",
+        doomednum: 19,
         spawnstate: "S_SPOS_DIE5",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3165,7 +3173,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC68
-        doomednum: "10",
+        doomednum: 10,
         spawnstate: "S_PLAY_XDIE9",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3191,7 +3199,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC69
-        doomednum: "12",
+        doomednum: 12,
         spawnstate: "S_PLAY_XDIE9",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3217,7 +3225,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC70
-        doomednum: "28",
+        doomednum: 28,
         spawnstate: "S_HEADSONSTICK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3243,7 +3251,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC71
-        doomednum: "24",
+        doomednum: 24,
         spawnstate: "S_GIBS",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3269,7 +3277,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC72
-        doomednum: "27",
+        doomednum: 27,
         spawnstate: "S_HEADONASTICK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3295,7 +3303,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC73
-        doomednum: "29",
+        doomednum: 29,
         spawnstate: "S_HEADCANDLES",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3321,7 +3329,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC74
-        doomednum: "25",
+        doomednum: 25,
         spawnstate: "S_DEADSTICK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3347,7 +3355,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC75
-        doomednum: "26",
+        doomednum: 26,
         spawnstate: "S_LIVESTICK",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3373,7 +3381,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC76
-        doomednum: "54",
+        doomednum: 54,
         spawnstate: "S_BIGTREE",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3399,7 +3407,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC77
-        doomednum: "70",
+        doomednum: 70,
         spawnstate: "S_BBAR1",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3425,7 +3433,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC78
-        doomednum: "73",
+        doomednum: 73,
         spawnstate: "S_HANGNOGUTS",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3451,7 +3459,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC79
-        doomednum: "74",
+        doomednum: 74,
         spawnstate: "S_HANGBNOBRAIN",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3477,7 +3485,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC80
-        doomednum: "75",
+        doomednum: 75,
         spawnstate: "S_HANGTLOOKDN",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3503,7 +3511,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC81
-        doomednum: "76",
+        doomednum: 76,
         spawnstate: "S_HANGTSKULL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3529,7 +3537,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC82
-        doomednum: "77",
+        doomednum: 77,
         spawnstate: "S_HANGTLOOKUP",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3555,7 +3563,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC83
-        doomednum: "78",
+        doomednum: 78,
         spawnstate: "S_HANGTNOBRAIN",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3581,7 +3589,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC84
-        doomednum: "79",
+        doomednum: 79,
         spawnstate: "S_COLONGIBS",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3607,7 +3615,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC85
-        doomednum: "80",
+        doomednum: 80,
         spawnstate: "S_SMALLPOOL",
         spawnhealth: "1000",
         seestate: "S_NULL",
@@ -3633,7 +3641,7 @@ let mobjinfos = [
     },
 
     {		// MT_MISC86
-        doomednum: "81",
+        doomednum: 81,
         spawnstate: "S_BRAINSTEM",
         spawnhealth: "1000",
         seestate: "S_NULL",

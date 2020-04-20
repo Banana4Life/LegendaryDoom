@@ -7,7 +7,7 @@ class DoomGame {
     readonly textures: DoomTextureMap
     readonly maps: DoomMap[]
 
-    readonly modj = mobjinfos
+    readonly mobj = mobjobinfos()
 
     private readonly mapLookup: Map<DoomMapName, DoomMap>
 

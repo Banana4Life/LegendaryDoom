@@ -71,6 +71,8 @@ class Game {
         let playerThing = this.doomGame.maps[0].things[0]
         this.cameraTransform.setPosition(-playerThing.y, -41, -playerThing.x)
         this.cameraYaw = deg2rad(playerThing.angle)
+        this.cameraTransform.thing = playerThing
+        this.cameraTransform.mobj = this.doomGame.mobj[playerThing.type]
 
         return this.renderer.initRenderer()
             .then(this.startLoop.bind(this))
@@ -135,7 +137,7 @@ class Game {
         let newPos = this.cameraTransform.getPosition()
 
         let map = this.doomGame.maps[0]
-        if (!this.checkCollide(map, map.things[0], this.cameraTransform, oldPos, newPos)) {
+        if (!this.checkCollide(map, this.cameraTransform, oldPos, newPos)) {
             // console.log("Collide")
         }
 
@@ -170,12 +172,24 @@ class Game {
         this.updateLoop(window, 0)
     }
 
+    liveThings: Transform[] = []
+
     private loadThings() {
         for (const thing of this.doomGame.maps[0].things) {
-            let transform = new Transform()
-            transform.setPosition(-thing.y, -this.getHeight(thing.x, thing.y), -thing.x)
-            transform.setEulerAngles(0, 0, deg2rad(thing.angle))
-            this.renderer.addThing(transform)
+            let mobj = this.doomGame.mobj[thing.type]
+            if (mobj) {
+                if (this.cameraTransform.thing === thing) {
+                    continue
+                }
+                let transform = new Transform()
+                transform.setPosition(-thing.y, -this.getHeight(thing.x, thing.y), -thing.x)
+                transform.setEulerAngles(0, 0, deg2rad(thing.angle))
+                transform.thing = thing
+                transform.mobj = mobj
+                this.renderer.addThing(transform)
+                this.liveThings.push(transform)
+            }
+
         }
     }
 
@@ -184,10 +198,37 @@ class Game {
     MAXRADIUS = 32 * this.FRACUNIT
     MAPBLOCKSHIFT = this.FRACBITS + 7
 
-    private checkCollide(map: DoomMap, tmthing: DoomThing, transform: Transform, oldPos: [number, number, number], newPos: [number, number, number]) {
+
+
+    private checkCollide(map: DoomMap, tmthing: Transform, oldPos: [number, number, number], newPos: [number, number, number]) {
 
         let blockMapOriginX = map.blockMap.originX << this.FRACBITS
         let blockMapOriginY = map.blockMap.originY << this.FRACBITS
+
+        let [x,y,z] = tmthing.getPosition();
+        let tmthingX = -z;
+        let tmthingY = -x
+
+
+        function forEachThing(x,y,func,things) {
+            let blockPosSearch = y * map.blockMap.columnCount + x
+            for (const thing of things) {
+
+                let blockx = (tmthingX- blockMapOriginX) >> MAPBLOCKSHIFT
+                let blocky = (tmthingY - blockMapOriginY) >> MAPBLOCKSHIFT
+
+                let blockPos = blocky * map.blockMap.columnCount + blockx
+
+                if (blockPosSearch === blockPos) {
+                    if (!func( thing ) ) {
+                        let [x,y,z] = thing.getPosition()
+                        console.log(`Collided with thing ${thing.thing.type} at ${-z}:${-x}`)
+                        return false
+                    }
+                }
+            }
+            return true
+        }
 
         function forEachLine(x,y,func) {
             if (x < 0 || y < 0 || x >= map.blockMap.columnCount || y >= map.blockMap.rowCount) {
@@ -205,29 +246,10 @@ class Game {
             return true // everything was checked
         }
 
-        function forEachThing(x,y,func) {
-            let blockPosSearch = y * map.blockMap.columnCount + x
-            for (const thing1 of map.things) {
-
-                let blockx = (tmthing.x - blockMapOriginX) >> MAPBLOCKSHIFT
-                let blocky = (tmthing.y - blockMapOriginY) >> MAPBLOCKSHIFT
-
-                let blockPos = blocky * map.blockMap.columnCount + blockx
-
-                if (blockPosSearch === blockPos) {
-                    if (!func( thing1 ) ) {
-                        console.log(`Collided with thing at ${thing1.x}:${thing1.y}`)
-                        return false
-                    }
-                }
-            }
-            return true
-        }
-
         let [nx,ny,nz] = newPos
         let tx = -nz
         let ty = -nx
-        let radius = this.doomGame.modj[tmthing.type].radius
+        let radius = tmthing.mobj.radius
 
         let tmboxTop = ty + radius
         let tmboxBottom = ty - radius
@@ -240,31 +262,30 @@ class Game {
 
         let ceilingline
 
-        let modjs = this.doomGame.modj
-
         let xl = (tmboxLeft - blockMapOriginX - this.MAXRADIUS) >> this.MAPBLOCKSHIFT
         let xh = (tmboxRight - blockMapOriginX + this.MAXRADIUS) >> this.MAPBLOCKSHIFT
         let yl = (tmboxBottom - blockMapOriginY - this.MAXRADIUS) >> this.MAPBLOCKSHIFT
         let yh = (tmboxTop - blockMapOriginY + this.MAXRADIUS) >> this.MAPBLOCKSHIFT
 
-        function PIT_CheckThing(thing: DoomThing) {
-            let thingmodj = modjs[thing.type]
-            let tmthingmodj = modjs[tmthing.type]
+        function PIT_CheckThing(thing: Transform) {
 
-            if (!(thingmodj.flags & (MF_SOLID | MF_SPECIAL | MF_SHOOTABLE))) {
+            if (!(thing.mobj.flags & (MF_SOLID | MF_SPECIAL | MF_SHOOTABLE))) {
                 return true
             }
-            let blockdist = thingmodj.radius + tmthingmodj.radius
+            let blockdist = thing.mobj.radius + tmthing.mobj.radius
 
-            if (Math.abs(thing.x - tmthing.x) >= blockdist
-                || Math.abs(thing.y - tmthing.y) >= blockdist) {
+            let [x1,y2,z3] = thing.getPosition()
+            let thingx = -z
+            let thingy = -x
+            if (Math.abs(thingx - tmthingX) >= blockdist
+                || Math.abs(thingy -tmthingY) >= blockdist) {
                 return true // didn't hit it
             }
             if (tmthing === thing) {
                 return true
             }
 
-            if (tmthingmodj.flags & MF_SKULLFLY) {
+            if (tmthing.mobj.flags & MF_SKULLFLY) {
                 // TODO
                 // damage = ((P_Random()%8)+1)*tmthing->info->damage;
                 //
@@ -277,7 +298,7 @@ class Game {
                 return false		// stop moving
             }
             // missiles can hit other things
-            if (tmthingmodj.flags & MF_MISSILE) {
+            if (tmthing.mobj.flags & MF_MISSILE) {
                 // TODO
                 // see if it went over / under
                 // if (tmthing.z > thing.z + thingmodj.height)
@@ -301,9 +322,9 @@ class Game {
                 //     }
                 // }
 
-                if (!(thingmodj.flags & MF_SHOOTABLE)) {
+                if (!(thing.mobj.flags & MF_SHOOTABLE)) {
                     // didn't do any damage
-                    return !(thingmodj.flags & MF_SOLID)
+                    return !(thing.mobj.flags & MF_SOLID)
                 }
 
                 // damage / explode
@@ -316,9 +337,9 @@ class Game {
             }
 
             // check for special pickup
-            if (thingmodj.flags & MF_SPECIAL) {
-                let solid = thingmodj.flags & MF_SOLID
-                if (tmthingmodj.flags & MF_PICKUP) {
+            if (thing.mobj.flags & MF_SPECIAL) {
+                let solid = thing.mobj.flags & MF_SOLID
+                if (tmthing.mobj.flags & MF_PICKUP) {
                     // can remove thing
                     // TODO
                     // P_TouchSpecialThing (thing, tmthing);
@@ -326,12 +347,12 @@ class Game {
                 return !solid
             }
 
-            return !(thingmodj.flags & MF_SOLID)
+            return !(thing.mobj.flags & MF_SOLID)
         }
 
         for (let bx=xl ; bx<=xh ; bx++)
             for (let by=yl ; by<=yh ; by++)
-                if (!forEachThing(bx,by,PIT_CheckThing))
+                if (!forEachThing(bx,by,PIT_CheckThing, this.liveThings))
                     return false;
 
         // check lines
@@ -484,12 +505,13 @@ class Game {
 
             if (!backsector)
                 return false;		// one sided line
-            if (!(modjs[tmthing.type].flags & MF_MISSILE) )
+
+            if (!(tmthing.mobj.flags & MF_MISSILE) )
             {
                 if (linedef.flags & ML_BLOCKING) {
                     return false; 	// explicitly blocking everything
                 }
-                if ( tmthing.type !== 1 && linedef.flags & ML_BLOCKMONSTERS )
+                if ( tmthing.thing.type !== 1 && linedef.flags & ML_BLOCKMONSTERS )
                     return false;	// block monsters only
             }
 
