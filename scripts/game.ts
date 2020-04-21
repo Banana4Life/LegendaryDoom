@@ -237,7 +237,9 @@ class Game {
 
             for (let lineIdx = offset; ; lineIdx++) {
                 let lineDef = map.lineDefs[lineIdx]
-
+                if (!lineDef) {
+                    break
+                }
                 if (!func(lineDef)) {
                     return false
                 }
@@ -248,12 +250,12 @@ class Game {
         let [nx,ny,nz] = newPos
         let tx = -nz
         let ty = -nx
-        let radius = tmthing.mobj.radius
+        let radius = tmthing.mobj.radius >> FRACBITS
 
-        let tmboxTop = ty + radius
-        let tmboxBottom = ty - radius
-        let tmboxRight = tx + radius
-        let tmboxLeft = tx - radius
+        const tmboxTop = ty + radius
+        const tmboxBottom = ty - radius
+        const tmboxRight = tx + radius
+        const tmboxLeft = tx - radius
 
         let tmfloor = ny
         let tmdropoff = ny
@@ -356,36 +358,35 @@ class Game {
                     return false
 
         // check lines
-        xl = (tmboxLeft - blockMapOriginX)>>MAPBLOCKSHIFT;
-        xh = (tmboxRight - blockMapOriginX)>>MAPBLOCKSHIFT;
-        yl = (tmboxBottom - blockMapOriginY)>>MAPBLOCKSHIFT;
-        yh = (tmboxTop - blockMapOriginY)>>MAPBLOCKSHIFT;
+        xl = ((tmboxLeft << this.FRACBITS ) - blockMapOriginX) >> MAPBLOCKSHIFT
+        xh = ((tmboxRight << this.FRACBITS ) - blockMapOriginX) >> MAPBLOCKSHIFT
+        yl = ((tmboxBottom << this.FRACBITS ) - blockMapOriginY) >> MAPBLOCKSHIFT
+        yh = ((tmboxTop << this.FRACBITS ) - blockMapOriginY) >> MAPBLOCKSHIFT
 
         function PIT_CheckLine(linedef: DoomLineDef) {
-            // TODO not sure
-            let leftSide = map.sideDefs[linedef.leftSideDefIndex]
-            let rightSide = map.sideDefs[linedef.rightSideDefIndex]
+            let v1 = map.vertexes[linedef.startVertexIndex]
+            let v2 = map.vertexes[linedef.endVertexIndex]
 
             let boxLeft, boxRight, boxTop, boxBottom
-            if (leftSide.offsetX < rightSide.offsetX) {
-                boxLeft = leftSide.offsetX;
-                boxRight = rightSide.offsetX
+            if (v1[0] < v2[0]) {
+                boxLeft = v1[0];
+                boxRight = v2[0]
             } else {
-                boxLeft = rightSide.offsetX;
-                boxRight = leftSide.offsetX
+                boxLeft = v2[0];
+                boxRight = v1[0]
             }
-            if (leftSide.offsetY < rightSide.offsetY)
+            if (v1[1] < v2[1])
             {
-                boxBottom = leftSide.offsetY
-                boxTop = rightSide.offsetY
+                boxBottom = v1[1]
+                boxTop = v2[1]
             }
             else
             {
-                boxBottom = rightSide.offsetY
-                boxTop = leftSide.offsetY
+                boxBottom = v2[1]
+                boxTop = v1[1]
             }
 
-            if(tmboxRight >= boxLeft
+            if(tmboxRight <= boxLeft
                 || tmboxLeft >= boxRight
                 || tmboxTop <= boxBottom
                 || tmboxBottom >= boxTop) {
@@ -394,10 +395,10 @@ class Game {
 
             function P_BoxOnLineSide(boxleft, boxRight, boxTop, boxBottom, lineDef: DoomLineDef) {
 
-                let v1 = map.sideDefs[lineDef.leftSideDefIndex]
-                let v2 = map.sideDefs[lineDef.rightSideDefIndex]
-                let lddx = v2.offsetX - v1.offsetX
-                let lddy = v2.offsetY - v1.offsetY
+                let v1 = map.vertexes[lineDef.startVertexIndex]
+                let v2 = map.vertexes[lineDef.endVertexIndex]
+                let lddx = v2[0] - v1[0]
+                let lddy = v2[1] - v1[1]
                 let slopetype
 
                 if (!lddx)
@@ -440,8 +441,8 @@ class Game {
                 switch (slopetype)
                 {
                     case "ST_HORIZONTAL":
-                        p1 = tmboxTop > v1.offsetY;
-                        p2 = tmboxBottom > v1.offsetY;
+                        p1 = tmboxTop > v1[1];
+                        p2 = tmboxBottom > v1[1];
                         if (lddx < 0)
                         {
                             p1 ^= 1;
@@ -450,8 +451,8 @@ class Game {
                         break;
 
                     case "ST_VERTICAL":
-                        p1 = tmboxRight< v1.offsetX;
-                        p2 = tmboxLeft < v1.offsetX;
+                        p1 = tmboxRight< v1[0];
+                        p2 = tmboxLeft < v1[0]
                         if (lddy < 0)
                         {
                             p1 ^= 1;

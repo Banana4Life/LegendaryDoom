@@ -613,7 +613,7 @@ class DoomBlockMap {
         let rowCount = readU16LE(buf, 6)
 
         let blockCount = columnCount * rowCount
-        let lineDefMap: number[][] = new Array<number[]>(blockCount)
+        let lineDefMap: number[][] = new Array<number[]>()
 
         for (let i = 0; i < blockCount; ++i) {
             let offset = readU16LE(buf, 8 + (i * 2)) * 2
