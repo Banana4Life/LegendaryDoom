@@ -59,18 +59,10 @@ class Transform {
         return [this.posX, this.posY, this.posZ];
     }
 
-    move(x, y, z = 0) {
-        if (Array.isArray(x)) {
-            [x, y, z] = x;
-        }
-        this.setPosition(this.posX + x, this.posY + y, this.posZ + z);
-    }
-
-    moveForward(x, y, z) {
-        let [x2,, z2, ] = mat4.multiplyV4(this.rotation, [x, 0, z, 0])
-        this.move(x2, 0, z2)
-        let [,y2,,] = mat4.multiplyV4(this.rotation, [0, y, 0, 0])
-        this.move(0, y2, 0)
+    getMoveForward(x, y, z): [number, number, number] {
+        let [dx,,dz,] = mat4.multiplyV4(this.rotation, [x, 0, z, 0])
+        let [,dy,,] = mat4.multiplyV4(this.rotation, [0, y, 0, 0])
+        return [this.posX + dx, this.posY + dy, this.posZ + dz]
     }
 
     setScale(x, y = x, z = x) {

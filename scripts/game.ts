@@ -122,23 +122,17 @@ class Game {
             this.cameraPitch = deg2rad(45)
         }
 
-        let oldPos = this.cameraTransform.getPosition()
+        let map = this.doomGame.maps[0]
+        let newPos = this.cameraTransform.getMoveForward(dx * dt, dy * dt, dz * dt)
+        this.tryMove(map, this.cameraTransform, newPos);
 
-        this.cameraTransform.moveForward(dx * dt, dy * dt, dz * dt)
         this.cameraTransform.setEulerAngles(0, this.cameraPitch, this.renderer.cameraYaw)
 
         let [x,y,z] = this.cameraTransform.getPosition()
-
         let targetHeight = this.getHeight(-z, -x)
-        this.cameraTransform.moveForward(0,(-targetHeight - y -41) * dt * 20,0)
 
-        let newPos = this.cameraTransform.getPosition()
-
-        let map = this.doomGame.maps[0]
-        if (!this.checkCollide(map, this.cameraTransform, oldPos, newPos)) {
-            this.cameraTransform.setPosition(oldPos)
-            // console.log("Collide")
-        }
+        newPos = this.cameraTransform.getMoveForward(0,(-targetHeight - y -41) * dt * 20,0)
+        this.cameraTransform.setPosition(newPos)
 
         if (this.controls.buttonPressed(this.controls.buttons.LEFT)) {
             // game.audio.play(Sound.PISTOL, 0.2)
@@ -165,7 +159,7 @@ class Game {
         this.renderer.loadPalettes(this.doomGame.colorPalettes)
         this.renderer.loadTextures(this.doomGame.textures.textures, this.loadSkies())
         this.renderer.loadMap(this.doomGame.maps[0])
-        this.loadThings()
+        // this.loadThings()
 
         this.paused = false
         this.updateLoop(window, 0)
@@ -198,16 +192,19 @@ class Game {
     MAPBLOCKSHIFT = this.FRACBITS + 7
 
 
+    private checkPosition(map: DoomMap, tmthing: Transform, tmthingX, tmthingY, tmthingZ) {
 
-    private checkCollide(map: DoomMap, tmthing: Transform, oldPos: [number, number, number], newPos: [number, number, number]) {
+        let [nx,ny,nz] = tmthing.getPosition()
+        let tx = -nz
+        let ty = -nx
+        let tz = -(ny+41)
 
-        let blockMapOriginX = map.blockMap.originX << this.FRACBITS
-        let blockMapOriginY = map.blockMap.originY << this.FRACBITS
+        let tmfloor = tz
+        let tmdropoff = tz
+        let tmCeiling = map.getSectorAt(tx, ty).ceilingHeight
 
-        let [x,y,z] = tmthing.getPosition();
-        let tmthingX = -z;
-        let tmthingY = -x
-
+        let blockMapOriginX = map.blockMap.originX << FRACBITS
+        let blockMapOriginY = map.blockMap.originY << FRACBITS
 
         function forEachThing(x,y,func,things) {
             let blockPosSearch = y * map.blockMap.columnCount + x
@@ -234,12 +231,8 @@ class Game {
                 return true;
             }
             let offset = y * map.blockMap.columnCount +x
-
-            for (let lineIdx = offset; ; lineIdx++) {
+            for (const lineIdx of map.blockMap.lineDefIndices[offset]) {
                 let lineDef = map.lineDefs[lineIdx]
-                if (!lineDef) {
-                    break
-                }
                 if (!func(lineDef)) {
                     return false
                 }
@@ -247,19 +240,12 @@ class Game {
             return true // everything was checked
         }
 
-        let [nx,ny,nz] = newPos
-        let tx = -nz
-        let ty = -nx
         let radius = tmthing.mobj.radius >> FRACBITS
 
-        const tmboxTop = ty + radius
-        const tmboxBottom = ty - radius
-        const tmboxRight = tx + radius
-        const tmboxLeft = tx - radius
-
-        let tmfloor = ny
-        let tmdropoff = ny
-        let tmCeiling = map.getSectorAt(tx, ty).ceilingHeight
+        const tmboxTop = tmthingY + radius
+        const tmboxBottom = tmthingY - radius
+        const tmboxRight = tmthingX + radius
+        const tmboxLeft = tmthingX - radius
 
         let ceilingline
 
@@ -369,19 +355,16 @@ class Game {
 
             let boxLeft, boxRight, boxTop, boxBottom
             if (v1[0] < v2[0]) {
-                boxLeft = v1[0];
+                boxLeft = v1[0]
                 boxRight = v2[0]
             } else {
-                boxLeft = v2[0];
+                boxLeft = v2[0]
                 boxRight = v1[0]
             }
-            if (v1[1] < v2[1])
-            {
+            if (v1[1] < v2[1]) {
                 boxBottom = v1[1]
                 boxTop = v2[1]
-            }
-            else
-            {
+            } else {
                 boxBottom = v2[1]
                 boxTop = v1[1]
             }
@@ -411,30 +394,25 @@ class Game {
                     slopetype = "ST_NEGATIVE"
 
                 function P_PointOnLineSide(x,y, line: DoomLineDef, lddx, lddy, v1) {
-                    if (!lddx)
-                    {
-                        if (x <= v1.offsetX)
-                            return lddy > 0;
-
-                        return lddy < 0;
+                    let v1offsetX = v1[0]
+                    let v1offsetY = v1[1]
+                    if (!lddx) {
+                        return x <= v1offsetX ? lddy > 0 : lddy < 0
                     }
-                    if (!lddy)
-                    {
-                        if (y <= v1.offsetY)
-                            return lddx < 0;
-
-                        return lddy> 0;
+                    if (!lddy) {
+                        return y <= v1offsetY ? lddx < 0 : lddx > 0
                     }
 
-                    let dx = (x - v1.offsetX);
-                    let dy = (y - v1.offsetY);
+                    let dx = (x - v1offsetX)
+                    let dy = (y - v1offsetY)
 
-                    let left = ((lddy >> FRACBITS) * dx) >> FRACBITS;
-                    let right = (dy * (lddy >> FRACBITS)) >> FRACBITS;
+                    let left = ((lddy ) * dx)
+                    let right = (dy * (lddx ))
 
-                    if (right < left)
-                        return 0;		// front side
-                    return 1;			// back side
+                    if (right < left) {
+                        return 0		// front side
+                    }
+                    return 1			// back side
                 }
 
                 let p1, p2
@@ -569,6 +547,7 @@ class Game {
             // if contacted a special line, add it to the list
             if (linedef.specialType)
             {
+                console.log("Special Linedef")
                 // TODO
                 // spechit[numspechit] = ld;
                 // numspechit++;
@@ -580,6 +559,48 @@ class Game {
             for (let by = yl; by <= yh; by++)
                 if (!forEachLine(bx, by, PIT_CheckLine))
                     return false
+
+        return [tmfloor, tmdropoff, tmCeiling]
+    }
+
+
+    private tryMove(map: DoomMap, tmthing: Transform, newPos: [number, number, number]) {
+
+        let [nx,ny,nz] = newPos
+        let tx = -nz
+        let ty = -nx
+        let tz = -(ny+41)
+
+        // NoClip?
+        let checkPosition = this.checkPosition(map, tmthing, tx, ty, tz)
+        if (!checkPosition) {
+            return false
+        }
+
+        let [tmfloor, tmdropoff, tmCeiling] = checkPosition
+
+        if (tmCeiling - tmfloor < tmthing.mobj.height / FRACUNIT) {
+            return false	// doesn't fit
+        }
+
+        // floatok = true; ??
+        if (!(tmthing.mobj.flags & MF_TELEPORT)
+            && tmCeiling - tz < tmthing.mobj.height / FRACUNIT) {
+            return false	// mobj must lower itself to fit
+        }
+
+        if (!(tmthing.mobj.flags & MF_TELEPORT)
+            && tmfloor - tz > 24) {
+            return false	// too big a step up
+        }
+
+
+        if (!(tmthing.mobj.flags & (MF_DROPOFF | MF_FLOAT))
+            && tmfloor - tmdropoff > 24) {
+            return false	// don't stand over a dropoff
+        }
+
+        tmthing.setPosition(newPos)
 
         return true
     }
