@@ -554,7 +554,6 @@ class Game {
 
         let [nx,,nz] = newPos
 
-        tmthing.floatok = false
         // NoClip?
         let positionResult = this.checkPosition(map, tmthing, -nz, -nx)
         if (!positionResult) {
@@ -566,8 +565,6 @@ class Game {
         if (tmCeiling - tmfloor < tmthing.mobj.height / FRACUNIT) {
             return false	// doesn't fit
         }
-
-        tmthing.floatok = true;
 
         let oldZ = -(tmthing.getPosition()[1]+41)
 
