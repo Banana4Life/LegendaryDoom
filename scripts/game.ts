@@ -122,15 +122,15 @@ class Game {
             this.cameraPitch = deg2rad(45)
         }
 
-        let map = this.doomGame.maps[0]
-        let newPos = this.cameraTransform.getMoveForward(dx * dt, dy * dt, dz * dt)
-        this.tryMove(map, this.cameraTransform, newPos);
-
         this.cameraTransform.setEulerAngles(0, this.cameraPitch, this.renderer.cameraYaw)
 
-        let [x,y,z] = this.cameraTransform.getPosition()
-        let targetHeight = this.getHeight(-z, -x)
+        let map = this.doomGame.maps[0]
+        let newPos = this.cameraTransform.getMoveForward(dx * dt, dy * dt, dz * dt)
+        let tryOk = this.tryMove(map, this.cameraTransform, newPos);
 
+
+        let [x,y,z] = this.cameraTransform.getPosition()
+        let targetHeight = this.cameraTransform.targetfloor
         newPos = this.cameraTransform.getMoveForward(0,(-targetHeight - y -41) * dt * 20,0)
         this.cameraTransform.setPosition(newPos)
 
@@ -554,6 +554,7 @@ class Game {
 
         let [nx,,nz] = newPos
 
+        tmthing.floatok = false
         // NoClip?
         let positionResult = this.checkPosition(map, tmthing, -nz, -nx)
         if (!positionResult) {
@@ -565,6 +566,8 @@ class Game {
         if (tmCeiling - tmfloor < tmthing.mobj.height / FRACUNIT) {
             return false	// doesn't fit
         }
+
+        tmthing.floatok = true;
 
         let oldZ = -(tmthing.getPosition()[1]+41)
 
@@ -585,6 +588,7 @@ class Game {
         }
 
         tmthing.setPosition(newPos)
+        tmthing.targetfloor = tmfloor
 
         return true
     }
