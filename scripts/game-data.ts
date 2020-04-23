@@ -246,67 +246,39 @@ class DoomMap {
     }
 
     getSectorAt(x, y) {
-        function pointOnSide(x,y,node): number {
-            let	dx;
-            let	dy;
-            let	left;
-            let	right;
-
-            if (!node.partitionLineXSize)
-            {
+        function R_PointOnSide(x, y, node): number {
+            if (node.partitionLineXSize === 0) {
                 if (x <= node.partitionLineX)
-                    return node.partitionLineYSize > 0 ? 1 : 0;
-
-                return node.partitionLineYSize < 0 ? 1 : 0;
+                    return node.partitionLineYSize > 0 ? 1 : 0
+                return node.partitionLineYSize < 0 ? 1 : 0
             }
-            if (!node.partitionLineYSize)
-            {
+            if (node.partitionLineYSize === 0) {
                 if (y <= node.partitionLineY)
-                    return node.partitionLineXSize < 0 ? 1 : 0;
-
-                return node.partitionLineXSize > 0 ? 1 : 0;
+                    return node.partitionLineXSize < 0 ? 1 : 0
+                return node.partitionLineXSize > 0 ? 1 : 0
             }
 
-            dx = (x - node.partitionLineX);
-            dy = (y - node.partitionLineY);
-
-            // Try to quickly decide by looking at sign bits.
-            if ( (node.partitionLineYSize ^ node.partitionLineXSize ^ dx ^ dy)&0x80000000 )
-            {
-                if  ( (node.partitionLineYSize ^ dx) & 0x80000000 )
-                {
-                    // (left is negative)
-                    return 1;
-                }
-                return 0;
+            function isLeft([ax,ay], [dx,dy], [cx,cy]) {
+                return (dx)*(cy-ay) - (dy)*(cx-ax) > 0
             }
 
-            function FixedMul( a, b )
-            {
-                return (a * b) >> 16;
-            }
-
-
-            left = FixedMul ( node.partitionLineYSize>>16 , dx );
-            right = FixedMul ( dy , node.partitionLineXSize>>16 );
-
-            if (right < left)
-            {
-                // front side
-                return 0;
-            }
-            // back side
-            return 1;
+            return isLeft([node.partitionLineX, node.partitionLineY], [node.partitionLineXSize, node.partitionLineYSize], [x, y]) ? 1 : 0
         }
         let NF_SUBSECTOR = 0x8000
+        if (this.nodes.length === 0) {
+            console.log("single subsector is a special case")
+        }
         let nodenum = this.nodes.length -1;
-        while (! (nodenum & NF_SUBSECTOR)) {
+        // while (! (nodenum & NF_SUBSECTOR)) {
+        while (nodenum < NF_SUBSECTOR) {
             let node = this.nodes[nodenum]
-            let side = pointOnSide(x, y, node)
+            let side = R_PointOnSide(x, y, node)
             nodenum = side === 1 ? node.leftChildIndex : node.rightChildIndex
         }
-        let subSector = this.subSectors[nodenum & ~NF_SUBSECTOR]
+        // let subSector = this.subSectors[nodenum & ~NF_SUBSECTOR]
+        let subSector = this.subSectors[nodenum - NF_SUBSECTOR]
         return subSector.getSector(this);
+        // 288/283
     }
 }
 
@@ -484,7 +456,6 @@ class DoomSubSector {
     private sector
     getSector(map) {
         if (!this.sector) {
-
             let segment = map.segments[this.firstSegmentIndex]
             let lineDef = map.lineDefs[segment.lineDefIndex]
             let sideDef = map.sideDefs[segment.direction === 0 ? lineDef.rightSideDefIndex : lineDef.leftSideDefIndex]

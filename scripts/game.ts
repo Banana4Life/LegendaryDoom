@@ -192,16 +192,11 @@ class Game {
     MAPBLOCKSHIFT = this.FRACBITS + 7
 
 
-    private checkPosition(map: DoomMap, tmthing: Transform, tmthingX, tmthingY, tmthingZ) {
-
-        let [nx,ny,nz] = tmthing.getPosition()
-        let tx = -nz
-        let ty = -nx
-        let tz = -(ny+41)
-
-        let tmfloor = tz
-        let tmdropoff = tz
-        let tmCeiling = map.getSectorAt(tx, ty).ceilingHeight
+    private checkPosition(map: DoomMap, tmthing: Transform, newX, newY) {
+        let sector = map.getSectorAt(newX, newY)
+        let tmfloor = sector.floorHeight
+        let tmdropoff = sector.floorHeight
+        let tmCeiling = sector.ceilingHeight
 
         let blockMapOriginX = map.blockMap.originX << FRACBITS
         let blockMapOriginY = map.blockMap.originY << FRACBITS
@@ -210,8 +205,8 @@ class Game {
             let blockPosSearch = y * map.blockMap.columnCount + x
             for (const thing of things) {
 
-                let blockx = (tmthingX- blockMapOriginX) >> MAPBLOCKSHIFT
-                let blocky = (tmthingY - blockMapOriginY) >> MAPBLOCKSHIFT
+                let blockx = (newX- blockMapOriginX) >> MAPBLOCKSHIFT
+                let blocky = (newY - blockMapOriginY) >> MAPBLOCKSHIFT
 
                 let blockPos = blocky * map.blockMap.columnCount + blockx
 
@@ -240,12 +235,12 @@ class Game {
             return true // everything was checked
         }
 
-        let radius = tmthing.mobj.radius >> FRACBITS
+        let radius = tmthing.mobj.radius
 
-        const tmboxTop = tmthingY + radius
-        const tmboxBottom = tmthingY - radius
-        const tmboxRight = tmthingX + radius
-        const tmboxLeft = tmthingX - radius
+        const tmboxTop =    (newY << FRACBITS) + radius
+        const tmboxBottom = (newY << FRACBITS) - radius
+        const tmboxRight =  (newX << FRACBITS) + radius
+        const tmboxLeft =   (newX << FRACBITS) - radius
 
         let ceilingline
 
@@ -264,8 +259,8 @@ class Game {
             let [x1,y1,z1] = thing.getPosition()
             let thingx = -z1
             let thingy = -x1
-            if (Math.abs(thingx - tmthingX) >= blockdist
-                || Math.abs(thingy -tmthingY) >= blockdist) {
+            if (Math.abs(thingx - newX) >= blockdist
+                || Math.abs(thingy -newY) >= blockdist) {
                 return true // didn't hit it
             }
             if (tmthing === thing) {
@@ -344,10 +339,10 @@ class Game {
                     return false
 
         // check lines
-        xl = ((tmboxLeft << this.FRACBITS ) - blockMapOriginX) >> MAPBLOCKSHIFT
-        xh = ((tmboxRight << this.FRACBITS ) - blockMapOriginX) >> MAPBLOCKSHIFT
-        yl = ((tmboxBottom << this.FRACBITS ) - blockMapOriginY) >> MAPBLOCKSHIFT
-        yh = ((tmboxTop << this.FRACBITS ) - blockMapOriginY) >> MAPBLOCKSHIFT
+        xl = (tmboxLeft -   blockMapOriginX) >> MAPBLOCKSHIFT
+        xh = (tmboxRight -  blockMapOriginX) >> MAPBLOCKSHIFT
+        yl = (tmboxBottom - blockMapOriginY) >> MAPBLOCKSHIFT
+        yh = (tmboxTop -    blockMapOriginY) >> MAPBLOCKSHIFT
 
         function PIT_CheckLine(linedef: DoomLineDef) {
             let v1 = map.vertexes[linedef.startVertexIndex]
@@ -355,18 +350,18 @@ class Game {
 
             let boxLeft, boxRight, boxTop, boxBottom
             if (v1[0] < v2[0]) {
-                boxLeft = v1[0]
-                boxRight = v2[0]
+                boxLeft = v1[0] << FRACBITS
+                boxRight = v2[0] << FRACBITS
             } else {
-                boxLeft = v2[0]
-                boxRight = v1[0]
+                boxLeft = v2[0] << FRACBITS
+                boxRight = v1[0] << FRACBITS
             }
             if (v1[1] < v2[1]) {
-                boxBottom = v1[1]
-                boxTop = v2[1]
+                boxBottom = v1[1] << FRACBITS
+                boxTop = v2[1] << FRACBITS
             } else {
-                boxBottom = v2[1]
-                boxTop = v1[1]
+                boxBottom = v2[1] << FRACBITS
+                boxTop = v1[1] << FRACBITS
             }
 
             if(tmboxRight <= boxLeft
@@ -376,35 +371,42 @@ class Game {
                 return true
             }
 
-            function P_BoxOnLineSide(boxleft, boxRight, boxTop, boxBottom, lineDef: DoomLineDef) {
+            function P_BoxOnLineSide(lineDef: DoomLineDef) {
 
                 let v1 = map.vertexes[lineDef.startVertexIndex]
                 let v2 = map.vertexes[lineDef.endVertexIndex]
+                let v1x = v1[0] << FRACBITS
+                let v1y = v1[1] << FRACBITS
                 let lddx = v2[0] - v1[0]
                 let lddy = v2[1] - v1[1]
                 let slopetype
+
+                function FixedDiv(a,b) {
+                    if (Math.abs(a) >> 14 >= Math.abs(b)) {
+                        return (a^b) < 0  ? -2147483648 : 2147483648
+                    }
+                    return (a / b * FRACUNIT)
+                }
 
                 if (!lddx)
                     slopetype = "ST_VERTICAL"
                 else if (!lddy)
                     slopetype = "ST_HORIZONTAL"
-                else if (lddy / lddx > 0)
+                else if (FixedDiv(lddy, lddx) > 0)
                     slopetype = "ST_POSITIVE"
                 else
                     slopetype = "ST_NEGATIVE"
 
-                function P_PointOnLineSide(x,y, line: DoomLineDef, lddx, lddy, v1) {
-                    let v1offsetX = v1[0]
-                    let v1offsetY = v1[1]
+                function P_PointOnLineSide(x,y) {
                     if (!lddx) {
-                        return x <= v1offsetX ? lddy > 0 : lddy < 0
+                        return x <= v1x ? lddy > 0 : lddy < 0
                     }
                     if (!lddy) {
-                        return y <= v1offsetY ? lddx < 0 : lddx > 0
+                        return y <= v1y ? lddx < 0 : lddx > 0
                     }
 
-                    let dx = (x - v1offsetX)
-                    let dy = (y - v1offsetY)
+                    let dx = (x - v1x)
+                    let dy = (y - v1y)
 
                     let left = ((lddy ) * dx)
                     let right = (dy * (lddx ))
@@ -419,8 +421,8 @@ class Game {
                 switch (slopetype)
                 {
                     case "ST_HORIZONTAL":
-                        p1 = tmboxTop > v1[1];
-                        p2 = tmboxBottom > v1[1];
+                        p1 = tmboxTop > v1y;
+                        p2 = tmboxBottom > v1y;
                         if (lddx < 0)
                         {
                             p1 ^= 1;
@@ -429,8 +431,8 @@ class Game {
                         break;
 
                     case "ST_VERTICAL":
-                        p1 = tmboxRight< v1[0];
-                        p2 = tmboxLeft < v1[0]
+                        p1 = tmboxRight< v1x;
+                        p2 = tmboxLeft < v1x
                         if (lddy < 0)
                         {
                             p1 ^= 1;
@@ -439,13 +441,13 @@ class Game {
                         break;
 
                     case "ST_POSITIVE":
-                        p1 = P_PointOnLineSide (tmboxLeft, tmboxTop, lineDef, lddx, lddy, v1);
-                        p2 = P_PointOnLineSide (tmboxRight, tmboxBottom, lineDef, lddx, lddy, v1);
+                        p1 = P_PointOnLineSide (tmboxLeft, tmboxTop);
+                        p2 = P_PointOnLineSide (tmboxRight, tmboxBottom);
                         break;
 
                     case "ST_NEGATIVE":
-                        p1 = P_PointOnLineSide (tmboxRight, tmboxTop, lineDef, lddx, lddy, v1);
-                        p2 = P_PointOnLineSide (tmboxLeft, tmboxBottom, lineDef, lddx, lddy, v1);
+                        p1 = P_PointOnLineSide (tmboxRight, tmboxTop);
+                        p2 = P_PointOnLineSide (tmboxLeft, tmboxBottom);
                         break;
                 }
 
@@ -454,7 +456,7 @@ class Game {
                 return -1;
             }
 
-            if (P_BoxOnLineSide (tmboxLeft, tmboxRight, tmboxTop, tmboxBottom, linedef) != -1)
+            if (P_BoxOnLineSide (linedef) != -1)
                 return true;
 
             // A line has been hit
@@ -470,21 +472,10 @@ class Game {
             const ML_BLOCKING = 1
             const ML_BLOCKMONSTERS = 2
 
-            let backsector
-            if (linedef.rightSideDefIndex !== -1) {
-                backsector = map.sideDefs[linedef.rightSideDefIndex].sectorIndex
-            } else {
-                backsector = 0
-            }
-            let frontsector
-            if (linedef.leftSideDefIndex != -1) {
-                frontsector = map.sideDefs[linedef.leftSideDefIndex].sectorIndex
-            } else {
-                frontsector = 0
-            }
+            let frontsector = linedef.rightSideDefIndex === -1 ? 0 : map.sideDefs[linedef.rightSideDefIndex].sectorIndex
+            let backsector = linedef.leftSideDefIndex === -1 ? 0 : map.sideDefs[linedef.leftSideDefIndex].sectorIndex
 
-            if (!backsector)
-                return false;		// one sided line
+            if (!backsector) return false;		// one sided line
 
             if (!(tmthing.mobj.flags & MF_MISSILE) )
             {
@@ -511,10 +502,7 @@ class Game {
                 let backCeiling = map.sectors[backsector].ceilingHeight
                 let backFloor = map.sectors[backsector].floorHeight
 
-                if (frontCeiling < backCeiling)
-                    opentop = frontCeiling
-                else
-                    opentop = backCeiling
+                opentop = frontCeiling < backCeiling ? frontCeiling : backCeiling
 
                 if (frontFloor > backFloor) {
                     openbottom = frontFloor
@@ -532,8 +520,7 @@ class Game {
             let [opentop, openbottom, lowfloor] = P_LineOpening (linedef);
 
             // adjust floor / ceiling heights
-            if (opentop < tmCeiling)
-            {
+            if (opentop < tmCeiling) {
                 tmCeiling = opentop;
                 ceilingline = linedef;
             }
@@ -545,8 +532,7 @@ class Game {
                 tmdropoff = lowfloor;
 
             // if contacted a special line, add it to the list
-            if (linedef.specialType)
-            {
+            if (linedef.specialType) {
                 console.log("Special Linedef")
                 // TODO
                 // spechit[numspechit] = ld;
@@ -566,34 +552,32 @@ class Game {
 
     private tryMove(map: DoomMap, tmthing: Transform, newPos: [number, number, number]) {
 
-        let [nx,ny,nz] = newPos
-        let tx = -nz
-        let ty = -nx
-        let tz = -(ny+41)
+        let [nx,,nz] = newPos
 
         // NoClip?
-        let checkPosition = this.checkPosition(map, tmthing, tx, ty, tz)
-        if (!checkPosition) {
+        let positionResult = this.checkPosition(map, tmthing, -nz, -nx)
+        if (!positionResult) {
             return false
         }
 
-        let [tmfloor, tmdropoff, tmCeiling] = checkPosition
+        let [tmfloor, tmdropoff, tmCeiling] = positionResult
 
         if (tmCeiling - tmfloor < tmthing.mobj.height / FRACUNIT) {
             return false	// doesn't fit
         }
 
+        let oldZ = -(tmthing.getPosition()[1]+41)
+
         // floatok = true; ??
         if (!(tmthing.mobj.flags & MF_TELEPORT)
-            && tmCeiling - tz < tmthing.mobj.height / FRACUNIT) {
+            && tmCeiling - oldZ < tmthing.mobj.height / FRACUNIT) {
             return false	// mobj must lower itself to fit
         }
 
         if (!(tmthing.mobj.flags & MF_TELEPORT)
-            && tmfloor - tz > 24) {
+            && tmfloor - oldZ > 24) {
             return false	// too big a step up
         }
-
 
         if (!(tmthing.mobj.flags & (MF_DROPOFF | MF_FLOAT))
             && tmfloor - tmdropoff > 24) {
