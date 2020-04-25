@@ -115,8 +115,7 @@ class Renderer {
             return
         }
 
-        // FIXME it seems that our triangle winding directions are inconsistent. expected winding would be counter-clockwise
-        // gl.enable(gl.CULL_FACE)
+        gl.enable(gl.CULL_FACE)
         gl.enable(gl.DEPTH_TEST)
         gl.depthFunc(gl.LEQUAL)
 
@@ -303,7 +302,7 @@ class Renderer {
                 vertices = vertices.concat([right[1], top, right[0]])
                 vertices = vertices.concat([right[1], bottom, right[0]])
 
-                let triangleOffsets = [0, 1, 2, 1, 2, 3]
+                let triangleOffsets = [0, 1, 2, 1, 3, 2]
                 for (let triangleOffset of triangleOffsets) {
                     triangles.push(prevVertexCount + triangleOffset)
                 }
@@ -399,15 +398,15 @@ class Renderer {
         gl.enableVertexAttribArray(attribute)
     }
 
-    colorPalette = 0
-    render(dt: number): void {
+    render(): void {
         let gl = this.webgl
+        let colorPalette = 1
 
         gl.clearColor(.2, .2, .2, 1)
         gl.clearDepth(1)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-        this.renderSky(gl, this.sky)
+        this.renderSky(gl, this.sky, colorPalette)
 
         this.setupAttrib(0, "vertexPosition", this.buffers.vertices, 3)
 
@@ -421,7 +420,7 @@ class Renderer {
         gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, mat4.identity)
         gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, this.camera.getTransformation())
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, this.projectionMatrix)
-        gl.uniform1ui(this.shaders[0].uniform["colorPalette"], Math.floor(this.colorPalette += dt) % 14)
+        gl.uniform1ui(this.shaders[0].uniform["colorPalette"], colorPalette)
 
         this.bindTexture(this.wallAtlas.texture, 0, 0, "atlasSampler")
         this.bindTexture(this.colorMapsTexture, 1, 0, "colorMapsSampler")
@@ -436,7 +435,7 @@ class Renderer {
         this.renderCoordSystem(gl)
     }
 
-    private renderSky(gl: WebGL2RenderingContext, sky: number) {
+    private renderSky(gl: WebGL2RenderingContext, sky: number, colorPalette: number) {
         let rf = this.cameraYaw / (Math.PI / 2)
 
         let heightPart = 0.5
@@ -463,6 +462,7 @@ class Renderer {
         gl.uniformMatrix4fv(this.shaders[0].uniform["modelMatrix"], false, mat4.identity)
         gl.uniformMatrix4fv(this.shaders[0].uniform["viewMatrix"], false, mat4.identity)
         gl.uniformMatrix4fv(this.shaders[0].uniform["projectionMatrix"], false, mat4.identity)
+        gl.uniform1ui(this.shaders[0].uniform["colorPalette"], colorPalette)
 
         this.bindTexture(this.skyAtlas.texture, 0, 0, "atlasSampler")
         this.bindTexture(this.colorMapsTexture, 1, 0, "colorMapsSampler")

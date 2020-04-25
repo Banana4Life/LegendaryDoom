@@ -21,7 +21,7 @@ class Game {
 
     update(dt) {
         this.update0(dt)
-        this.renderer.render(dt)
+        this.renderer.render()
         return true
     }
 
@@ -192,7 +192,7 @@ class Game {
     MAPBLOCKSHIFT = this.FRACBITS + 7
 
 
-    private checkPosition(map: DoomMap, tmthing: Transform, newX, newY) {
+    private checkPosition(map: DoomMap, tmthing: Transform, newX, newY): [number, number, number] | false {
         let sector = map.getSectorAt(newX, newY)
         let tmfloor = sector.floorHeight
         let tmdropoff = sector.floorHeight
