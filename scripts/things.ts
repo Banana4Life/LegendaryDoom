@@ -26,6 +26,7 @@ class Transform {
     thing: DoomThing
     mobj
     targetfloor
+    noclip: boolean
 
     constructor() {
         this.baseRotation = [1,0,0,0]

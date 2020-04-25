@@ -66,6 +66,8 @@ class Game {
         this.controls.keys.MUTE_MUSIC.addCallback(() => this.audio.toggleMusic(true))
         this.controls.keys.MUTE_SOUND.addCallback( () => this.audio.toggleSounds())
 
+        this.controls.keys.ENTER.addCallback( (e, words) => this.doMagic(words))
+
         let playerThing = this.doomGame.maps[0].things[0]
         this.cameraTransform.setPosition(-playerThing.y, -41, -playerThing.x)
         this.renderer.cameraYaw = deg2rad(playerThing.angle)
@@ -197,6 +199,10 @@ class Game {
         let tmfloor = sector.floorHeight
         let tmdropoff = sector.floorHeight
         let tmCeiling = sector.ceilingHeight
+
+        if (tmthing.noclip) {
+            return [tmfloor, tmdropoff, tmCeiling]
+        }
 
         let blockMapOriginX = map.blockMap.originX << FRACBITS
         let blockMapOriginY = map.blockMap.originY << FRACBITS
@@ -562,31 +568,49 @@ class Game {
 
         let [tmfloor, tmdropoff, tmCeiling] = positionResult
 
-        if (tmCeiling - tmfloor < tmthing.mobj.height / FRACUNIT) {
-            return false	// doesn't fit
+        if (!tmthing.noclip) {
+            if (tmCeiling - tmfloor < tmthing.mobj.height / FRACUNIT) {
+                return false	// doesn't fit
+            }
+
+            let oldZ = -(tmthing.getPosition()[1]+41)
+
+            // floatok = true; ??
+            if (!(tmthing.mobj.flags & MF_TELEPORT)
+                && tmCeiling - oldZ < tmthing.mobj.height / FRACUNIT) {
+                return false	// mobj must lower itself to fit
+            }
+
+            if (!(tmthing.mobj.flags & MF_TELEPORT)
+                && tmfloor - oldZ > 24) {
+                return false	// too big a step up
+            }
+
+            if (!(tmthing.mobj.flags & (MF_DROPOFF | MF_FLOAT))
+                && tmfloor - tmdropoff > 24) {
+                return false	// don't stand over a dropoff
+            }
         }
 
-        let oldZ = -(tmthing.getPosition()[1]+41)
 
-        // floatok = true; ??
-        if (!(tmthing.mobj.flags & MF_TELEPORT)
-            && tmCeiling - oldZ < tmthing.mobj.height / FRACUNIT) {
-            return false	// mobj must lower itself to fit
-        }
-
-        if (!(tmthing.mobj.flags & MF_TELEPORT)
-            && tmfloor - oldZ > 24) {
-            return false	// too big a step up
-        }
-
-        if (!(tmthing.mobj.flags & (MF_DROPOFF | MF_FLOAT))
-            && tmfloor - tmdropoff > 24) {
-            return false	// don't stand over a dropoff
-        }
 
         tmthing.setPosition(newPos)
         tmthing.targetfloor = tmfloor
 
         return true
     }
+
+
+    private doMagic(magicWords: string) {
+        if (magicWords.endsWith("god")) {
+            console.log("Do you believe?")
+        }
+        if (magicWords.endsWith("noclip")) {
+            this.cameraTransform.noclip = true
+        }
+        else if (magicWords.endsWith("clip")) {
+            this.cameraTransform.noclip = false
+        }
+    }
+
 }

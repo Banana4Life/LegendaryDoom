@@ -11,6 +11,8 @@ class Controls {
         ESCAPE: new ConfigurableKey("Escape"),
         SPACEBAR: new ConfigurableKey("Space"),
 
+        ENTER: new ConfigurableKey("Enter"),
+
         MUTE_MUSIC: new ConfigurableKey("KeyM"),
         MUTE_SOUND: new ConfigurableKey("KeyN")
     }
@@ -96,18 +98,18 @@ class Controls {
                 console.log("Welcome to the CHEATS Zone!")
             }
 
-            if (e.code === "Enter") {
-                this.doMagic()
-            }
-            this.magicWords += e.key
-
             for (let keysKey in this.keys) {
                 let key: ConfigurableKey = this.keys[keysKey]
                 if (key.callbacks.length > 0) {
                     if (key.hasCode(e.code)) {
-                        key.makeCallbacks(e)
+                        key.makeCallbacks(e, this.magicWords)
                     }
                 }
+            }
+            if (e.code === "Enter") {
+                this.magicWords = ""
+            } else {
+                this.magicWords += e.key
             }
         })
 
@@ -142,13 +144,6 @@ class Controls {
         })
     }
 
-    private doMagic() {
-        if (this.magicWords.endsWith("god")) {
-            console.log("Do you believe?")
-        }
-        this.magicWords = ""
-    }
-
 }
 
 class ConfigurableKey {
@@ -181,9 +176,9 @@ class ConfigurableKey {
         this.callbacks.push(callback)
     }
 
-    makeCallbacks(event: KeyboardEvent) {
+    makeCallbacks(event: KeyboardEvent, magicwords) {
         for (const callback of this.callbacks) {
-            callback(event)
+            callback(event, magicwords)
         }
     }
 }
